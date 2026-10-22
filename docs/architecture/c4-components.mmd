@@ -1,0 +1,17 @@
+flowchart LR
+    API[Versioned REST API] --> Patients[patients]
+    API --> Appointments[appointments]
+    API --> Staff[staff]
+    API --> Outpatient[outpatient]
+    API --> Records[records]
+    API --> Laboratory[laboratory]
+    API --> Inpatient[inpatient]
+    API --> Security[security]
+    Appointments -->|public service / IDs| Patients
+    Appointments -->|staff assignment| Staff
+    Outpatient -->|appointment reference| Appointments
+    Records -->|encounter reference| Outpatient
+    Laboratory -->|encounter reference| Outpatient
+    Inpatient -->|patient reference| Patients
+    Security -. role checks and audit facade .-> API
+    note[All components are *planned module boundaries*; domain logic is not yet implemented.]

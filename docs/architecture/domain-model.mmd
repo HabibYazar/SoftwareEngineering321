@@ -1,0 +1,38 @@
+erDiagram
+    PATIENT ||--o{ APPOINTMENT : books
+    STAFF ||--o{ APPOINTMENT : attends
+    APPOINTMENT ||--o| ENCOUNTER : initiates
+    PATIENT ||--o{ ENCOUNTER : has
+    ENCOUNTER ||--o{ CLINICAL_NOTE : documents
+    ENCOUNTER ||--o{ LAB_ORDER : requests
+    LAB_ORDER ||--o{ LAB_RESULT : produces
+    PATIENT ||--o{ ADMISSION : receives
+    BED ||--o{ ADMISSION : assigned_during
+    USER ||--o{ AUDIT_EVENT : triggers
+    PATIENT {
+      uuid id PK
+      string display_name
+      date date_of_birth
+    }
+    STAFF { uuid id PK
+      string role_title }
+    APPOINTMENT { uuid id PK
+      datetime starts_at
+      datetime ends_at
+      string status }
+    ENCOUNTER { uuid id PK
+      string status }
+    CLINICAL_NOTE { uuid id PK
+      datetime recorded_at }
+    LAB_ORDER { uuid id PK
+      string status }
+    LAB_RESULT { uuid id PK
+      datetime verified_at }
+    ADMISSION { uuid id PK
+      datetime admitted_at }
+    BED { uuid id PK
+      string ward }
+    USER { uuid id PK
+      string subject }
+    AUDIT_EVENT { uuid id PK
+      datetime occurred_at }

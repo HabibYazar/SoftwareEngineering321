@@ -1,0 +1,7 @@
+flowchart TD
+    Users[Authorized Hospital Staff Browser] -->|Local network HTTP for demo / TLS required in hospital| ReverseProxy[Nginx / React Static Frontend]
+    ReverseProxy -->|REST /api/v1| Backend[Spring Boot Modular Monolith]
+    Backend -->|JDBC - future implementation| DB[(PostgreSQL)]
+    Backend -. not implemented .-> Integrations[Approved External Adapters]
+    classDef deferred stroke-dasharray:5 5,fill:#f2f2f2
+    class Integrations deferred

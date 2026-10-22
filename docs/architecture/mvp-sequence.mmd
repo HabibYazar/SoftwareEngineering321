@@ -1,0 +1,25 @@
+sequenceDiagram
+    actor Receptionist
+    participant UI as Web UI
+    participant API as HMS REST API
+    participant DB as PostgreSQL (planned)
+    actor Doctor
+    actor LabTech
+    Note over UI,DB: Planned MVP flow; domain endpoints are not implemented in the scaffold
+    Receptionist->>UI: Register patient
+    UI->>API: POST /api/v1/patients
+    API->>DB: Save patient
+    API-->>UI: 201 Created
+    Receptionist->>UI: Request appointment
+    UI->>API: POST /api/v1/appointments
+    API->>DB: Check and reserve clinician slot atomically
+    alt conflict
+      API-->>UI: 409 Conflict
+    else available
+      API-->>UI: 201 Created
+    end
+    Doctor->>UI: Start encounter / order test
+    UI->>API: POST /api/v1/encounters and lab-orders
+    LabTech->>UI: Enter result (synthetic)
+    UI->>API: POST /api/v1/lab-orders/{id}/results
+    Doctor->>UI: View result
