@@ -1,0 +1,37 @@
+# Local demonstration only. Never deploy this configuration for clinical use.
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${HMS_DB_USER:-hms}
+      POSTGRES_PASSWORD: ${HMS_DB_PASSWORD:-local_demo_only_change_me}
+      POSTGRES_DB: ${HMS_DB_NAME:-hms_community}
+    volumes:
+      - hms_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+    networks: [internal]
+  backend:
+    build: ./backend
+    environment:
+      HMS_DB_URL: jdbc:postgresql://db:5432/${HMS_DB_NAME:-hms_community}
+      HMS_DB_USER: ${HMS_DB_USER:-hms}
+      HMS_DB_PASSWORD: ${HMS_DB_PASSWORD:-local_demo_only_change_me}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [internal]
+  frontend:
+    build: ./frontend
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on: [backend]
+    networks: [internal]
+networks:
+  internal:
+    driver: bridge
+volumes:
+  hms_postgres:
