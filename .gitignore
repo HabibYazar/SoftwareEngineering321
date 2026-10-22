@@ -1,0 +1,25 @@
+# IDE / OS
+.idea/
+.vscode/
+*.iml
+.DS_Store
+Thumbs.db
+# JVM
+backend/target/
+*.class
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+# Secrets / local configuration
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.jks
+# Other
+__pycache__/
+.pytest_cache/
+*.log
