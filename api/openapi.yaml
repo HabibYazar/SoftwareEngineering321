@@ -3,18 +3,27 @@ info:
   title: HMS Community API (Sprint 1 Draft)
   version: 0.1.0
   description: |
-    Proposed academic contract. Only GET /health exists in the scaffold.
-    All clinical operations below are unimplemented and use synthetic data only.
+    Proposed academic contract aligned with Product Backlog V3.
+    Week 8 MVP: login, roles/audit foundations, patient registration/search,
+    clinician directory, appointments, outpatient examination and EMR.
+    Week 10 final: laboratory requests, results and physician review.
+    Only GET /health currently exists in the scaffold; all other operations
+    remain planned. Synthetic test data only; not for clinical use.
+    Staff roles: Administrator, Receptionist, Physician, Nurse,
+    Patient Care Assistant, Lab Technician, Cleaning Staff.
+    User-story IDs and priorities are documented in the Product Backlog V3.
 servers:
   - url: /api/v1
 security:
   - bearerAuth: []
 tags:
   - name: System
+  - name: Authentication
   - name: Patients
   - name: Staff
   - name: Appointments
   - name: Outpatient
+  - name: Records
   - name: Laboratory
 paths:
   /health:
@@ -30,7 +39,57 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Health'
+  /auth/login:
+    post:
+      tags: [Authentication]
+      operationId: loginStaff
+      summary: Staff login (US-01, planned for MVP)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Valid credentials, role and session token
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+  /auth/logout:
+    post:
+      tags: [Authentication]
+      operationId: logoutStaff
+      summary: Invalidate the current staff session/token (US-01, planned)
+      responses:
+        '204': { description: Signed out }
+        '401': { $ref: '#/components/responses/Unauthorized' }
   /patients:
+    get:
+      tags: [Patients]
+      operationId: searchPatients
+      summary: Search synthetic patients by name or national ID (US-07, planned for MVP)
+      description: Supply a name fragment or an exact 11-digit synthetic national ID. Receptionist access is planned.
+      parameters:
+        - in: query
+          name: name
+          schema: { type: string, minLength: 1, maxLength: 150 }
+        - in: query
+          name: nationalId
+          schema: { type: string, pattern: '^[0-9]{11}$' }
+      responses:
+        '200':
+          description: Matching patients, or an empty array if none
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Patient' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
     post:
       tags: [Patients]
       operationId: createPatient
@@ -90,7 +149,11 @@ paths:
     post:
       tags: [Appointments]
       operationId: createAppointment
-      summary: Book a clinician time slot (planned)
+      summary: Book a clinician 15-minute slot (US-11, planned for MVP)
+      description: |
+        Only slots during seeded/assigned clinician working hours are permitted.
+        A booking in the past or for an unregistered patient is rejected.
+        Concurrent requests must not double-book the same doctor and slot.
       requestBody:
         required: true
         content:
@@ -100,7 +163,7 @@ paths:
               patientId: 1dc9c3dd-54fd-45c5-829e-5040a6a92913
               clinicianId: 4b04cc12-df95-4fb4-a6d4-fb9f3cd454da
               startsAt: '2026-11-04T10:00:00+03:00'
-              endsAt: '2026-11-04T10:20:00+03:00'
+              endsAt: '2026-11-04T10:15:00+03:00'
       responses:
         '201':
           description: Appointment created
@@ -121,6 +184,49 @@ paths:
                 status: 409
                 code: SLOT_UNAVAILABLE
                 detail: This time interval overlaps an active appointment.
+    get:
+      tags: [Appointments]
+      operationId: listPhysicianAppointments
+      summary: Physician daily schedule (US-14, planned for MVP)
+      description: Physician may view only their own appointments, ordered by start time.
+      parameters:
+        - in: query
+          name: clinicianId
+          required: true
+          schema: { type: string, format: uuid }
+        - in: query
+          name: date
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Ordered appointments for the selected physician and date
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Appointment' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /appointments/{appointmentId}/cancel:
+    post:
+      tags: [Appointments]
+      operationId: cancelAppointment
+      summary: Cancel a scheduled appointment (US-12, planned for MVP)
+      description: Cancelled slot becomes available; completed visits cannot be cancelled.
+      parameters:
+        - $ref: '#/components/parameters/appointmentId'
+      responses:
+        '200':
+          description: Updated cancelled appointment
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Appointment' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
   /encounters:
     post:
       tags: [Outpatient]
@@ -141,11 +247,115 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
+  /encounters/{encounterId}:
+    patch:
+      tags: [Outpatient]
+      operationId: completeEncounter
+      summary: Complete an active examination (US-15, planned for MVP)
+      description: Only the assigned physician may complete an IN_EXAMINATION encounter.
+      parameters:
+        - $ref: '#/components/parameters/encounterId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [COMPLETED] }
+      responses:
+        '200':
+          description: Completed examination
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Encounter' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /encounters/{encounterId}/clinical-note:
+    put:
+      tags: [Records]
+      operationId: saveClinicalNote
+      summary: Save complaint, findings and diagnosis (US-17.1, planned for MVP)
+      description: Notes are editable during examination, but read-only after completion.
+      parameters:
+        - $ref: '#/components/parameters/encounterId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClinicalNote' }
+      responses:
+        '200':
+          description: Saved or updated clinical note
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClinicalNote' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Records]
+      operationId: getClinicalNote
+      summary: View examination note and diagnosis (US-17.1, planned)
+      parameters:
+        - $ref: '#/components/parameters/encounterId'
+      responses:
+        '200':
+          description: Clinical note for this examination
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClinicalNote' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /patients/{patientId}/medical-history:
+    get:
+      tags: [Records]
+      operationId: getMedicalHistory
+      summary: View medical history and allergies (US-17.2, planned for MVP)
+      parameters:
+        - $ref: '#/components/parameters/patientId'
+      responses:
+        '200':
+          description: Patient history and allergy warnings
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MedicalHistory' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    put:
+      tags: [Records]
+      operationId: updateMedicalHistory
+      summary: Record medical history and allergies (US-17.2, planned for MVP)
+      parameters:
+        - $ref: '#/components/parameters/patientId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/MedicalHistory' }
+      responses:
+        '200':
+          description: Saved medical history and allergies
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MedicalHistory' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
   /lab-orders:
     post:
       tags: [Laboratory]
       operationId: createLabOrder
-      summary: Physician requests a lab test (planned)
+      summary: Physician requests a lab test (US-19, Week 10 final)
       requestBody:
         required: true
         content:
@@ -165,7 +375,7 @@ paths:
     post:
       tags: [Laboratory]
       operationId: recordLabResult
-      summary: Enter synthetic laboratory result (planned)
+      summary: Enter synthetic laboratory result (US-20, Week 10 final)
       parameters:
         - $ref: '#/components/parameters/orderId'
       requestBody:
@@ -184,6 +394,21 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
         '409': { $ref: '#/components/responses/Conflict' }
+    get:
+      tags: [Laboratory]
+      operationId: getLabResults
+      summary: Physician reviews test result (US-21, Week 10 final)
+      parameters:
+        - $ref: '#/components/parameters/orderId'
+      responses:
+        '200':
+          description: Lab result with reference-range warning (when available)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LabResult' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
 components:
   securitySchemes:
     bearerAuth:
@@ -202,6 +427,16 @@ components:
       in: path
       required: true
       schema: { type: string, format: uuid }
+    appointmentId:
+      name: appointmentId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    encounterId:
+      name: encounterId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
   schemas:
     Health:
       type: object
@@ -209,13 +444,52 @@ components:
       properties:
         service: { type: string, example: hms-community }
         status: { type: string, enum: [UP] }
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string, minLength: 1 }
+        password: { type: string, format: password, minLength: 1 }
+    LoginResponse:
+      type: object
+      required: [accessToken, tokenType, role]
+      properties:
+        accessToken: { type: string, description: Planned demo token }
+        tokenType: { type: string, enum: [Bearer] }
+        role:
+          type: string
+          enum: [Administrator, Receptionist, Physician, Nurse, PatientCareAssistant, LabTechnician, CleaningStaff]
+    RelativeInformation:
+      type: object
+      required: [fullName, relationship, phone]
+      properties:
+        fullName: { type: string, minLength: 1, maxLength: 150 }
+        relationship: { type: string, minLength: 1, maxLength: 80 }
+        phone: { type: string, minLength: 1, maxLength: 32 }
     NewPatient:
       type: object
-      required: [displayName, dateOfBirth]
+      description: |
+        US-06: synthetic 11-digit national ID must be unique. Relative information
+        is mandatory when conditionLevel is ADVANCED; validation uses 400 for
+        missing/invalid fields and 409 for duplicate national ID.
+      required: [firstName, lastName, nationalId, dateOfBirth, gender, phone, address, conditionLevel]
       properties:
-        displayName: { type: string, minLength: 1, maxLength: 150 }
+        firstName: { type: string, minLength: 1, maxLength: 100 }
+        lastName: { type: string, minLength: 1, maxLength: 100 }
+        nationalId: { type: string, pattern: '^[0-9]{11}$', description: Synthetic test ID only }
         dateOfBirth: { type: string, format: date }
-        contactPhone: { type: string, maxLength: 32 }
+        gender: { type: string, minLength: 1, maxLength: 40 }
+        phone: { type: string, minLength: 1, maxLength: 32 }
+        address: { type: string, minLength: 1, maxLength: 500 }
+        conditionLevel: { type: string, enum: [MILD, MODERATE, ADVANCED] }
+        relativeInformation: { $ref: '#/components/schemas/RelativeInformation' }
+      allOf:
+        - if:
+            properties:
+              conditionLevel: { const: ADVANCED }
+            required: [conditionLevel]
+          then:
+            required: [relativeInformation]
     Patient:
       allOf:
         - $ref: '#/components/schemas/NewPatient'
@@ -237,7 +511,7 @@ components:
         patientId: { type: string, format: uuid }
         clinicianId: { type: string, format: uuid }
         startsAt: { type: string, format: date-time }
-        endsAt: { type: string, format: date-time }
+        endsAt: { type: string, format: date-time, description: Must be exactly 15 minutes after startsAt }
     Appointment:
       allOf:
         - $ref: '#/components/schemas/NewAppointment'
@@ -245,7 +519,7 @@ components:
           required: [id, status]
           properties:
             id: { type: string, format: uuid }
-            status: { type: string, enum: [SCHEDULED, CANCELLED, COMPLETED] }
+            status: { type: string, enum: [SCHEDULED, IN_EXAMINATION, CANCELLED, COMPLETED] }
     NewEncounter:
       type: object
       required: [appointmentId]
@@ -258,7 +532,32 @@ components:
           required: [id, status]
           properties:
             id: { type: string, format: uuid }
-            status: { type: string, enum: [OPEN, CLOSED] }
+            status: { type: string, enum: [IN_EXAMINATION, COMPLETED] }
+    ClinicalNote:
+      type: object
+      required: [complaint, findings, diagnosis]
+      properties:
+        complaint: { type: string, minLength: 1 }
+        findings: { type: string, minLength: 1 }
+        diagnosis: { type: string, minLength: 1, description: ICD-10 subset or free-text diagnosis }
+    MedicalHistory:
+      type: object
+      properties:
+        chronicConditions:
+          type: array
+          items: { type: string }
+        previousIllnessesAndSurgeries:
+          type: array
+          items: { type: string }
+        allergies:
+          type: array
+          items:
+            type: object
+            required: [type, substance]
+            properties:
+              type: { type: string, enum: [DRUG, FOOD, OTHER] }
+              substance: { type: string }
+              notes: { type: string }
     NewLabOrder:
       type: object
       required: [encounterId, testCode]
@@ -272,7 +571,7 @@ components:
           required: [id, status]
           properties:
             id: { type: string, format: uuid }
-            status: { type: string, enum: [ORDERED, PROCESSING, COMPLETED, CANCELLED] }
+            status: { type: string, enum: [REQUESTED, PROCESSING, COMPLETED, CANCELLED] }
     NewLabResult:
       type: object
       required: [resultValue, unit]
@@ -288,6 +587,8 @@ components:
           properties:
             id: { type: string, format: uuid }
             recordedAt: { type: string, format: date-time }
+            referenceRange: { type: string, description: Human-readable reference range for the chosen test }
+            outOfRange: { type: boolean, description: Flag values outside the test reference range }
     Problem:
       type: object
       required: [title, status, code]
