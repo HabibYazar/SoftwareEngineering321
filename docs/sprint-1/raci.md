@@ -1,29 +1,45 @@
-# Sprint 1 — Roles and RACI (fill names before submission)
+# HMS Community — Sprint 1 RACI Responsibility Matrix
 
-**Team:** six students. Official rubric names five primary roles and lists Integration Engineer as an *additional role for the seven-person team*. This six-person team proposes a sixth **Implementation Coordinator** as a working assignment; confirm acceptability and exact role name with the instructor.
+**Version:** V5 Final · 24 October 2026  
+**Project:** Hospital Management System — Community Edition (BM 321 / SENG 321)  
+**Approved matrix PDF:** [HMS_Community_RACI_Guncel_V5_Final.pdf](HMS_Community_RACI_Guncel_V5_Final.pdf)
 
-| Abbreviation | Role | Named owner |
-|---|---|---|
-| PO | Product Owner & Requirements Engineer | TBD |
-| SM | Scrum Master & Agile Process Coach | TBD |
-| ARCH | Lead Software Architect & Technical Lead | Team lead — fill GitHub username |
-| QA | Quality Assurance & Test Automation Engineer | TBD |
-| DEVOPS | DevOps & CI/CD Infrastructure Engineer | TBD |
-| IMPL | Implementation Coordinator (proposed role) | TBD |
+## Team Roles
 
-R = Responsible (does work), A = Accountable (owns outcome; one A per row), C = Consulted, I = Informed.
+| Abbreviation | Role |
+|---|---|
+| ARCH | Lead Software Architect and Technical Lead |
+| PO | Product Owner and Requirements Engineer |
+| SM | Scrum Master and Agile Process Coach |
+| QA | Quality Assurance and Test Automation Engineer |
+| DEVOPS | DevOps and CI/CD Infrastructure Engineer |
+| IMPL | Implementation and Integration Engineer |
 
-| Activity | PO | SM | ARCH | QA | DEVOPS | IMPL |
-|---|---|---|---|---|---|---|
-| Proposal and release scope | A | C | C | C | I | R |
-| Requirements & acceptance criteria | A | C | C | R | I | R |
-| System context / C4 / UML | C | I | A | C | R | R |
-| OpenAPI draft | C | I | A | R | C | R |
-| RACI / meeting records | C | A | C | I | I | R |
-| GitHub protection / Git-Flow | I | A | C | C | R | R |
-| CI / Docker | I | C | C | C | A | R |
-| Test plan and quality evidence | C | C | C | A | R | R |
-| Backlog prioritization | A | R | C | C | I | C |
-| Final demo | C | A | R | R | R | R |
+## RACI Matrix
 
-**Individual evidence:** Every student must create issue-linked commits/PRs and provide documented contributions. Architecture lead has design accountability, not exemption from peer review.
+**A** = Accountable (final ownership) · **R** = Responsible (performs the work) · **C** = Consulted · **I** = Informed · **A/R** = both Accountable and Responsible.
+
+| Activity | ARCH | PO | SM | QA | DEVOPS | IMPL |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|
+| Project Proposal | A/R | C | I | I | I | C |
+| System Vision & Boundary | A/R | C | I | I | C | C |
+| Requirements, Stories & Product Backlog | C | A/R | I | C | I | C |
+| Stakeholder Validation | C | A/R | I | C | I | I |
+| RACI Matrix & Role Ownership | I | C | C | I | I | A/R |
+| OpenAPI Contract | A/R | C | I | C | R | C |
+| Architecture Strategy | A/R | C | I | C | C | C |
+| C4 & UML Diagrams | A/R | C | I | I | R | C |
+| Data Model & Database Schema | C | A/R | I | C | C | I |
+| Synthetic Data & Database Fixtures | A | R | I | C | C | I |
+| Backend Services & API Implementation | A/R | C | I | C | R | I |
+| Frontend UI & API Integration | C | C | I | C | C | A/R |
+| End-to-End Feature Integration | A | C | I | C | R | R |
+| Code Review Leadership | A/R | I | I | C | C | C |
+| Test Plans & Automation | C | C | I | A/R | R | C |
+| GitHub Workflow & Agile Tracking | C | I | A/R | I | C | I |
+| CI/CD Testing & Deployment Automation | C | I | I | C | A/R | C |
+| Containerization & Development Environment | C | I | I | C | A/R | C |
+| Repository Security & CI/CD Secrets | C | I | I | C | A/R | C |
+| Architectural Defense | A/R | C | I | C | C | C |
+
+All 20 activities have exactly one Accountable (A) role.
