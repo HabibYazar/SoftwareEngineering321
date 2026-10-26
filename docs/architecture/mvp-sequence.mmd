@@ -1,25 +1,35 @@
 sequenceDiagram
-    actor Receptionist
+    actor Staff as Receptionist
     participant UI as Web UI
     participant API as HMS REST API
     participant DB as PostgreSQL (planned)
-    actor Doctor
-    actor LabTech
-    Note over UI,DB: Planned MVP flow; domain endpoints are not implemented in the scaffold
-    Receptionist->>UI: Register patient
+    actor Doctor as Physician
+    Note over UI,DB: Week 8 MVP (Sprint 3) — planned, synthetic data only
+    Note over UI,DB: Currently only GET /api/v1/health is implemented
+    Staff->>UI: Sign in
+    UI->>API: POST /api/v1/auth/login
+    API-->>UI: Session/token and role (planned)
+    Staff->>UI: Register synthetic patient
     UI->>API: POST /api/v1/patients
-    API->>DB: Save patient
+    API->>DB: Validate and save patient
     API-->>UI: 201 Created
-    Receptionist->>UI: Request appointment
+    Staff->>UI: Select clinician and available 15-minute slot
     UI->>API: POST /api/v1/appointments
-    API->>DB: Check and reserve clinician slot atomically
-    alt conflict
-      API-->>UI: 409 Conflict
-    else available
-      API-->>UI: 201 Created
+    API->>DB: Check slot and reserve atomically
+    alt slot unavailable
+        API-->>UI: 409 Conflict
+    else slot available
+        API-->>UI: 201 Created
     end
-    Doctor->>UI: Start encounter / order test
-    UI->>API: POST /api/v1/encounters and lab-orders
-    LabTech->>UI: Enter result (synthetic)
-    UI->>API: POST /api/v1/lab-orders/{id}/results
-    Doctor->>UI: View result
+    Doctor->>UI: View daily schedule and start examination
+    UI->>API: GET /api/v1/appointments?clinicianId=...&date=...
+    UI->>API: POST /api/v1/encounters
+    API-->>UI: 201 Created (IN_EXAMINATION)
+    Doctor->>UI: Save examination note and diagnosis
+    UI->>API: PUT /api/v1/encounters/{encounterId}/clinical-note
+    Doctor->>UI: View/update medical history and allergies
+    UI->>API: GET /api/v1/patients/{patientId}/medical-history
+    Doctor->>UI: Complete examination
+    UI->>API: PATCH /api/v1/encounters/{encounterId}
+    API-->>UI: 200 OK (COMPLETED)
+    Note over UI,DB: Laboratory request and results belong to Week 10 final, NOT this MVP
