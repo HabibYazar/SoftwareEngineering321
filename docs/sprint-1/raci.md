@@ -7,7 +7,7 @@
 ## Team Roles
 
 | Abbreviation | Role | GitHub Username | Name |
-|---|---|
+|---|---|---|---|
 | ARCH | Lead Software Architect and Technical Lead | @HabibYazar | Habib Yazar |
 | PO | Product Owner and Requirements Engineer | @huseyin-tutak | Hüseyin Tutak |
 | SM | Scrum Master and Agile Process Coach | @aliardilerkol8-eng | Ali Ardıl Erkol |
