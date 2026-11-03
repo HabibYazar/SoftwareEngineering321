@@ -6,14 +6,14 @@
 
 ## Team Roles
 
-| Abbreviation | Role |
+| Abbreviation | Role | GitHub Username | Name |
 |---|---|
-| ARCH | Lead Software Architect and Technical Lead |
-| PO | Product Owner and Requirements Engineer |
-| SM | Scrum Master and Agile Process Coach |
-| QA | Quality Assurance and Test Automation Engineer |
-| DEVOPS | DevOps and CI/CD Infrastructure Engineer |
-| IMPL | Implementation and Integration Engineer |
+| ARCH | Lead Software Architect and Technical Lead | @HabibYazar | Habib Yazar |
+| PO | Product Owner and Requirements Engineer | @huseyin-tutak | Hüseyin Tutak |
+| SM | Scrum Master and Agile Process Coach | @aliardilerkol8-eng | Ali Ardıl Erkol |
+| QA | Quality Assurance and Test Automation Engineer | @Ekejje | Yusuf Arda Şanlı |
+| DEVOPS | DevOps and CI/CD Infrastructure Engineer | @Zmly007 | Yılmaz Şanlı |
+| IMPL | Implementation and Integration Engineer | @ardaservetusta-lang | Arda Servet Şanlı |
 
 ## RACI Matrix
 
