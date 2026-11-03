@@ -46,3 +46,22 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Check TypeScript and build
         run: npm run build
+
+
+  openapi-validation:
+    name: OpenAPI validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install OpenAPI validator
+        run: python -m pip install PyYAML openapi-spec-validator
+
+      - name: Validate OpenAPI 3.1 contract
+        run: python scripts/validate_openapi.py
