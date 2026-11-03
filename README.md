@@ -3,7 +3,7 @@
 
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-informational)](#continuous-integration) [![License: Apache-2.0](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
 
-**SENG 321 / BM 321 — University team project · Community edition**
+**SENG 321 / BM 321 — Team 15 · Community edition**
 
 A modular-monolith foundation for a single-hospital, on-premises, browser-based Hospital Management System (HMS/HBYS).
 
@@ -135,6 +135,9 @@ CI jobs install dependencies from their standard upstream registries.
 4. [Role ownership and RACI V5](docs/sprint-1/raci.md)
 5. [Git-Flow and PR policy](docs/sprint-1/git-workflow.md)
 6. [Product Backlog V3](docs/sprint-1/backlog.md)
+
+**Team Number:** 15  
+**Project Name:** HMS Community — Hospital Management System
 
 ### Team roles — RACI V5
 
