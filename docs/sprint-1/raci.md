@@ -13,7 +13,7 @@
 | SM | Scrum Master and Agile Process Coach | @aliardilerkol8-eng | Ali Ardıl Erkol |
 | QA | Quality Assurance and Test Automation Engineer | @Ekejje | Yusuf Arda Şanlı |
 | DEVOPS | DevOps and CI/CD Infrastructure Engineer | @Zmly007 | Yılmaz Şanlı |
-| IMPL | Implementation and Integration Engineer | @ardaservetusta-lang | Arda Servet Şanlı |
+| IMPL | Implementation and Integration Engineer | @ardaservetusta-lang | Arda Servet Usta |
 
 ## RACI Matrix
 
