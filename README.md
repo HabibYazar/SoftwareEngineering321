@@ -148,7 +148,7 @@ CI jobs install dependencies from their standard upstream registries.
 | Scrum Master & Agile Process Coach | Ali Ardıl Erkol | @aliardilerkol8-eng |
 | Quality Assurance & Test Automation Engineer | Yusuf Arda Şanlı | @Ekejje |
 | DevOps & CI/CD Infrastructure Engineer | Yılmaz Şanlı | @Zmly007 |
-| Implementation & Integration Engineer | Arda Servet Şanlı | @ardaservetusta-lang |
+| Implementation & Integration Engineer | Arda Servet Usta | @ardaservetusta-lang |
 
 The responsibility and accountability of each role are defined in the [RACI V5 matrix](docs/sprint-1/raci.md).
 
