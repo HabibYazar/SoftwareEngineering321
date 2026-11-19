@@ -15,6 +15,7 @@ public class HttpSecurityConfiguration {
         return http
             .authorizeHttpRequests(authorize -> authorize
                 .requestMatchers("/api/v1/health").permitAll()
+                .requestMatchers("/api/v1/staff").permitAll()
                 .anyRequest().denyAll())
             .httpBasic(basic -> basic.disable())
             .formLogin(form -> form.disable())
