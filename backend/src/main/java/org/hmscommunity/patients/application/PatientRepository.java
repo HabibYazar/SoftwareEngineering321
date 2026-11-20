@@ -1,6 +1,8 @@
 package org.hmscommunity.patients.application;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.hmscommunity.patients.domain.Patient;
 
 /**
@@ -22,6 +24,18 @@ public interface PatientRepository {
     /** Yeni hastayı ekler; ulusal kimlik numarası zaten kayıtlıysa {@link DuplicateNationalIdException} fırlatır. */
     Patient insert(Patient patient);
 
+    Optional<Patient> findById(UUID id);
+
     /** Ulusal kimlik numarasına göre birebir (exact) eşleşme. */
     Optional<Patient> findByNationalId(String nationalId);
+
+    /**
+     * US-07 kısmi ad araması. Beklenen anlam: {@code nameFragment}, Türkçe yerel ayarına göre büyük/küçük
+     * harf duyarsız olarak ad, soyad veya "ad soyad" birleşiminin herhangi bir yerinde geçiyorsa eşleşir
+     * (ör. PostgreSQL'de tr-TR ICU harmanlamasıyla {@code ILIKE '%' || :fragment || '%'}).
+     * Sonuçlar Türkçe harmanlamaya göre soyad, ad ve ardından kimliğe göre sıralanır; eşleşme yoksa boş liste döner.
+     *
+     * @param nameFragment servis tarafından kırpılmış, iç boşlukları teke indirilmiş ve boş olmayan değer
+     */
+    List<Patient> searchByName(String nameFragment);
 }

@@ -1,6 +1,8 @@
 package org.hmscommunity.patients.infrastructure;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import org.hmscommunity.common.IntegrationPendingException;
 import org.hmscommunity.patients.application.PatientRepository;
 import org.hmscommunity.patients.domain.Patient;
@@ -24,7 +26,17 @@ class UnavailablePatientRepository implements PatientRepository {
     }
 
     @Override
+    public Optional<Patient> findById(UUID id) {
+        throw new IntegrationPendingException(INTEGRATION);
+    }
+
+    @Override
     public Optional<Patient> findByNationalId(String nationalId) {
+        throw new IntegrationPendingException(INTEGRATION);
+    }
+
+    @Override
+    public List<Patient> searchByName(String nameFragment) {
         throw new IntegrationPendingException(INTEGRATION);
     }
 }

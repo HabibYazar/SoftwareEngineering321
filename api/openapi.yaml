@@ -83,8 +83,14 @@ paths:
     get:
       tags: [Patients]
       operationId: searchPatients
-      summary: Search synthetic patients by name or national ID (US-07, planned for MVP)
-      description: Supply a name fragment or an exact 11-digit synthetic national ID. Receptionist access is planned.
+      summary: Search synthetic patients by name or national ID (US-07, implemented; persistence pending #177)
+      description: |
+        Receptionist only. Supply exactly one of: an exact 11-digit synthetic
+        national ID, or a name fragment matched case-insensitively (Turkish rules)
+        anywhere in the first name, last name or "first last". Results are ordered
+        by last name, first name. No match returns 200 with an empty array.
+        Neither or both parameters return 400 (field searchCriteria). Each returned
+        patient is recorded as an audit VIEW event (accessChannel SEARCH_RESULT).
       parameters:
         - in: query
           name: name
@@ -103,6 +109,7 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
     post:
       tags: [Patients]
       operationId: createPatient
@@ -136,7 +143,8 @@ paths:
     get:
       tags: [Patients]
       operationId: getPatient
-      summary: Retrieve a patient record (planned)
+      summary: Retrieve a patient record (US-07/US-08, implemented; persistence pending #177)
+      description: Receptionist only. Recorded as an audit VIEW event (accessChannel RECORD).
       parameters:
         - $ref: '#/components/parameters/patientId'
       responses:
@@ -145,9 +153,11 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Patient' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /staff:
     get:
       tags: [Staff]
