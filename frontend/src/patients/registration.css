@@ -1,0 +1,43 @@
+/* Form yalnızca yerleşim kurallarını tanımlar; yüzeyler, renk ve odak ortak stillerden gelir. */
+.registration { max-width: 54rem; }
+.registration-form, .registration-fields {
+  display: grid;
+  gap: var(--space-4);
+}
+.registration-form fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+.registration-form fieldset + fieldset {
+  border-top: 1px solid var(--border);
+  padding-top: var(--space-4);
+}
+.registration-form legend {
+  padding: 0;
+  margin-bottom: var(--space-2);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+.registration-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.registration-wide { grid-column: 1 / -1; }
+.registration-form select, .registration-form textarea { font: inherit; }
+.registration-form textarea { resize: vertical; }
+.registration-relative-note { margin: 0 0 var(--space-3); }
+.registration-checkbox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: 44px;
+}
+.registration-checkbox input { accent-color: var(--accent); inline-size: 1.125rem; block-size: 1.125rem; }
+.registration-actions {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+}
+.registration-feedback { margin-bottom: var(--space-4); }
+
+@media (max-width: 45rem) {
+  .registration-fields { grid-template-columns: minmax(0, 1fr); }
+}
