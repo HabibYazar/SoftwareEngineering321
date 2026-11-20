@@ -1,0 +1,9 @@
+#,id,name,group_name,clinician_count,source_url
+1,9fecd79a-9ed6-59c8-9345-813bc15a6e13,Adli Tıp,Dahili Branşlar,2,https://adiyamaneah.saglik.gov.tr/TR-131911/adli-tip.html
+2,1e790629-a7b2-5af4-97fa-c8e678fd92cf,Kardiyoloji,Dahili Branşlar,4,https://adiyamaneah.saglik.gov.tr/TR-131912/kardiyoloji.html
+3,3e012ef6-0833-505e-8b43-3c618893df45,İç Hastalıkları,Dahili Branşlar,4,https://adiyamaneah.saglik.gov.tr/TR-131913/ic-hastaliklari.html
+4,6cb6c0a4-e92c-5023-98fe-8268525babb1,Nöroloji,Dahili Branşlar,3,https://adiyamaneah.saglik.gov.tr/TR-131914/noroloji.html
+5,e21b722a-86c9-5ad2-bad7-f503df5e6a33,Genel Cerrahi,Cerrahi Branşlar,4,https://adiyamaneah.saglik.gov.tr/TR-131915/genel-cerrahi.html
+6,7690524a-267f-5774-b128-8c4405a09902,Ortopedi ve Travmatoloji,Cerrahi Branşlar,3,https://adiyamaneah.saglik.gov.tr/TR-131916/ortopedi-ve-travmatoloji.html
+7,5495f47f-b0e0-54e4-b7fa-187cf797501b,Göz Hastalıkları,Cerrahi Branşlar,3,https://adiyamaneah.saglik.gov.tr/TR-131917/goz-hastaliklari.html
+8,3bc1edfc-1f3f-54d7-aeb1-6b65e0cd6fda,Tıbbi Biyokimya,Temel Tıp Bilimleri,2,https://adiyamaneah.saglik.gov.tr/TR-131918/tibbi-biyokimya.html

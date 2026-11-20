@@ -1,0 +1,26 @@
+#,id,display_name,department,department_id,first_name,last_name,title
+1,0f7987a0-b28a-5b35-953b-8caa4d250d57,Dr. Öğr. Üyesi Ahmet ÇELİK,Adli Tıp,9fecd79a-9ed6-59c8-9345-813bc15a6e13,Ahmet,ÇELİK,Dr. Öğr. Üyesi
+2,5e9932f6-df68-53b3-9309-af1f46930de0,Uzm. Dr. Mehmet YILDIRIM,Adli Tıp,9fecd79a-9ed6-59c8-9345-813bc15a6e13,Mehmet,YILDIRIM,Uzm. Dr.
+3,21e2a9c9-04a7-51cd-bb50-8652e2278c37,Doç. Dr. Ayşe ÖZDEMİR,Kardiyoloji,1e790629-a7b2-5af4-97fa-c8e678fd92cf,Ayşe,ÖZDEMİR,Doç. Dr.
+4,68286354-41a7-5859-aed3-b16b9fef9007,Dr. Öğr. Üyesi Fatma KILIÇ,Kardiyoloji,1e790629-a7b2-5af4-97fa-c8e678fd92cf,Fatma,KILIÇ,Dr. Öğr. Üyesi
+5,a9576c94-c145-5754-8148-d2fc14082bcf,Uzm. Dr. Mustafa KARA,Kardiyoloji,1e790629-a7b2-5af4-97fa-c8e678fd92cf,Mustafa,KARA,Uzm. Dr.
+6,4c3c0a7a-33e0-5470-a3ab-78e628664a24,Prof. Dr. Zeynep ÖZKAN,Kardiyoloji,1e790629-a7b2-5af4-97fa-c8e678fd92cf,Zeynep,ÖZKAN,Prof. Dr.
+7,f811b902-5852-589e-a6b5-d6af39ee353b,Dr. Öğr. Üyesi Emre KORKMAZ,İç Hastalıkları,3e012ef6-0833-505e-8b43-3c618893df45,Emre,KORKMAZ,Dr. Öğr. Üyesi
+8,334f9019-86db-572f-a567-cff2878d8a52,Uzm. Dr. Elif GÜNEŞ,İç Hastalıkları,3e012ef6-0833-505e-8b43-3c618893df45,Elif,GÜNEŞ,Uzm. Dr.
+9,99d8cd86-57ef-5aee-8390-52dac516a014,Prof. Dr. Burak DEMİR,İç Hastalıkları,3e012ef6-0833-505e-8b43-3c618893df45,Burak,DEMİR,Prof. Dr.
+10,c86d494e-f610-50ad-96b2-b9894b623b6e,Doç. Dr. Selin YILDIZ,İç Hastalıkları,3e012ef6-0833-505e-8b43-3c618893df45,Selin,YILDIZ,Doç. Dr.
+11,ee0503a6-0192-5f9f-b2b0-8da3cb7f603f,Uzm. Dr. Murat AYDIN,Nöroloji,6cb6c0a4-e92c-5023-98fe-8268525babb1,Murat,AYDIN,Uzm. Dr.
+12,ee27f59d-105b-57e4-8133-c963049ec6e0,Prof. Dr. Esra DOĞAN,Nöroloji,6cb6c0a4-e92c-5023-98fe-8268525babb1,Esra,DOĞAN,Prof. Dr.
+13,7853c35d-39c0-588c-ac0c-cb16f0ddebbd,Doç. Dr. Can ÇETİN,Nöroloji,6cb6c0a4-e92c-5023-98fe-8268525babb1,Can,ÇETİN,Doç. Dr.
+14,69414ed1-6ece-5187-aea4-5e8cfd0e5d8d,Op. Dr. Merve KURT,Genel Cerrahi,e21b722a-86c9-5ad2-bad7-f503df5e6a33,Merve,KURT,Op. Dr.
+15,364ccaab-6469-5af9-b6c8-3ea7dc6910f5,Prof. Dr. Hakan POLAT,Genel Cerrahi,e21b722a-86c9-5ad2-bad7-f503df5e6a33,Hakan,POLAT,Prof. Dr.
+16,37b88ae7-5155-5c3e-aade-b9849154a2c5,Doç. Dr. Özge ERDOĞAN,Genel Cerrahi,e21b722a-86c9-5ad2-bad7-f503df5e6a33,Özge,ERDOĞAN,Doç. Dr.
+17,05256150-bb4a-52a0-b6b6-1ac10a1a94b0,Dr. Öğr. Üyesi Serkan KAYA,Genel Cerrahi,e21b722a-86c9-5ad2-bad7-f503df5e6a33,Serkan,KAYA,Dr. Öğr. Üyesi
+18,cecd75e8-be1c-5085-a5bf-9891502ebe7b,Prof. Dr. Gamze ŞAHİN,Ortopedi ve Travmatoloji,7690524a-267f-5774-b128-8c4405a09902,Gamze,ŞAHİN,Prof. Dr.
+19,336999af-9489-5d87-8b75-6448135c1a5f,Doç. Dr. Kemal ÖZTÜRK,Ortopedi ve Travmatoloji,7690524a-267f-5774-b128-8c4405a09902,Kemal,ÖZTÜRK,Doç. Dr.
+20,cf3924a5-1858-5268-9242-b0a817e74a86,Dr. Öğr. Üyesi Büşra ARSLAN,Ortopedi ve Travmatoloji,7690524a-267f-5774-b128-8c4405a09902,Büşra,ARSLAN,Dr. Öğr. Üyesi
+21,8bb3ee99-e299-5d5a-92c0-b29ff79426fe,Prof. Dr. Tolga ASLAN,Göz Hastalıkları,5495f47f-b0e0-54e4-b7fa-187cf797501b,Tolga,ASLAN,Prof. Dr.
+22,c66149dd-ea43-56da-9c55-1eafba121686,Doç. Dr. Derya KOÇ,Göz Hastalıkları,5495f47f-b0e0-54e4-b7fa-187cf797501b,Derya,KOÇ,Doç. Dr.
+23,ba23c040-4459-5f48-aa57-73070481dfee,Dr. Öğr. Üyesi Onur ŞİMŞEK,Göz Hastalıkları,5495f47f-b0e0-54e4-b7fa-187cf797501b,Onur,ŞİMŞEK,Dr. Öğr. Üyesi
+24,718f474f-563c-5166-9ae0-ae86104e38c0,Prof. Dr. İrem ÇAKIR,Tıbbi Biyokimya,3bc1edfc-1f3f-54d7-aeb1-6b65e0cd6fda,İrem,ÇAKIR,Prof. Dr.
+25,57b4000a-ec3d-535c-9a7d-7ab8b397e066,Doç. Dr. Gökhan YILMAZ,Tıbbi Biyokimya,3bc1edfc-1f3f-54d7-aeb1-6b65e0cd6fda,Gökhan,YILMAZ,Doç. Dr.
