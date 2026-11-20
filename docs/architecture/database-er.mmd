@@ -1,0 +1,148 @@
+erDiagram
+    %% HMS Community - physical schema of migrations V1..V3 (US-01, US-03, US-05, US-06, US-08)
+    %% NULL = not provided (never '' or 0). "cascade" = deleted with the parent (administrator delete with reason).
+    ROLES ||--o{ STAFF_MEMBERS : "has role"
+    ROLES ||--o{ ROLE_PERMISSIONS : grants
+    PERMISSIONS ||--o{ ROLE_PERMISSIONS : "granted by"
+    STAFF_MEMBERS ||--o| USER_ACCOUNTS : "signs in with (cascade)"
+    STAFF_MEMBERS ||--o| DOCTOR_DEPARTMENTS : "physician in (cascade)"
+    DEPARTMENTS ||--o{ DOCTOR_DEPARTMENTS : contains
+    USER_ACCOUNTS ||--o{ AUTH_SESSIONS : "opens (cascade)"
+    PATIENTS ||--o| PATIENT_RELATIVES : "relative, required if ADVANCED (cascade)"
+    AUDIT_ACTIONS ||--o{ AUDIT_LOG : classifies
+    AUDIT_ENTITY_TYPES ||--o{ AUDIT_LOG : "record type"
+    AUDIT_ARCHIVES ||..o{ AUDIT_LOG_RESTORED : "restored from (logical, no FK)"
+    FIELD_RULES }o--|| VALIDATION_ERROR_CODES : "messages"
+    PATIENTS ||..o| RECORD_DELETIONS : "deleted with reason (entity_id, no FK)"
+    STAFF_MEMBERS ||..o| RECORD_DELETIONS : "deleted with reason"
+    USER_ACCOUNTS ||..o| RECORD_DELETIONS : "deleted with reason"
+
+    ROLES {
+      smallint id PK
+      text code UK "Administrator ... CleaningStaff"
+      text name_tr
+    }
+    PERMISSIONS {
+      smallint id PK
+      text code UK "PATIENT_UPDATE, PATIENT_DELETE, STAFF_DELETE, AUDIT_LOG_VIEW ..."
+      text module
+    }
+    ROLE_PERMISSIONS {
+      smallint role_id PK, FK
+      smallint permission_id PK, FK
+      timestamptz granted_at
+    }
+    DEPARTMENTS {
+      uuid id PK
+      text name UK "case-insensitive"
+      boolean is_active
+    }
+    STAFF_MEMBERS {
+      uuid id PK
+      smallint role_id FK
+      text first_name
+      text last_name
+      text title "NULL = none"
+      text phone "NULL = not provided"
+      text email "NULL = not provided"
+      text display_name "generated"
+    }
+    DOCTOR_DEPARTMENTS {
+      uuid staff_member_id PK, FK "Physician only"
+      uuid department_id FK
+    }
+    USER_ACCOUNTS {
+      uuid id PK
+      uuid staff_member_id FK, UK
+      text username UK "changed only by administrators"
+      text password_hash "BCrypt / Argon2"
+      text status "ACTIVE | DEACTIVATED"
+      boolean must_change_password
+    }
+    AUTH_SESSIONS {
+      uuid id PK
+      uuid user_account_id FK
+      bytea token_hash UK "SHA-256"
+      timestamptz expires_at
+      timestamptz revoked_at "NULL = active"
+      text revoke_reason "NULL = active"
+      inet client_ip "NULL = not sent"
+      text user_agent "NULL = not sent"
+    }
+    PATIENTS {
+      uuid id PK
+      text national_id UK "11 digits, admin-only change"
+      text first_name
+      text last_name
+      date date_of_birth
+      text gender
+      text phone
+      text address
+      text condition_level "MILD | MODERATE | ADVANCED"
+    }
+    PATIENT_RELATIVES {
+      uuid patient_id PK, FK
+      text full_name
+      text relationship
+      text phone
+    }
+    RECORD_DELETIONS {
+      bigint id PK
+      text entity_type "PATIENT | STAFF_MEMBER | USER_ACCOUNT"
+      uuid entity_id
+      text reason "required, 1..1000, typed by the administrator"
+      uuid deleted_by "NULL = system"
+      timestamptz deleted_at "immutable"
+    }
+    AUDIT_LOG {
+      bigint id PK
+      timestamptz occurred_at PK "monthly partitions"
+      uuid actor_user_id "NULL = system / unknown"
+      uuid session_id
+      uuid entity_id
+      smallint actor_role_id
+      smallint action_id FK
+      smallint result "1 ok, 2 fail, 3 denied"
+      smallint entity_type_id FK
+      jsonb details "before/after, delete reason, redacted"
+    }
+    AUDIT_ACTIONS {
+      smallint id PK
+      text code UK
+      text category
+    }
+    AUDIT_ENTITY_TYPES {
+      smallint id PK
+      text code UK
+      text table_name
+    }
+    AUDIT_ARCHIVES {
+      date period_start PK
+      bigint row_count
+      bigint min_id "NULL = empty month"
+      bigint max_id "NULL = empty month"
+      text file_sha256
+      text content_sha256
+      text compression "xz5-columnar"
+      text status "ARCHIVED | PARTITION_DROPPED"
+    }
+    AUDIT_LOG_RESTORED {
+      bigint id
+      date period_start "UNLOGGED copy, file is the durable one"
+      timestamptz occurred_at
+      text actor_username
+      text action
+      jsonb details
+    }
+    FIELD_RULES {
+      text table_name PK
+      text column_name PK
+      text api_field
+      text data_type
+      boolean required
+      integer max_length "NULL = no limit"
+    }
+    VALIDATION_ERROR_CODES {
+      text code PK
+      text message_tr
+    }
