@@ -13,6 +13,10 @@ info:
     All other operations remain planned. Synthetic test data only; not for clinical use.
     Staff roles: Administrator, Receptionist, Physician, Nurse,
     Patient Care Assistant, Lab Technician, Cleaning Staff.
+    Authorization (US-02) is deny-by-default: missing/invalid/revoked token -> 401,
+    authenticated role without permission -> 403 (code ACCESS_DENIED). Until the
+    Product Owner approves the role-permission matrix, patient operations are
+    granted only to Receptionist, as stated in US-06/US-07/US-08.
     User-story IDs and priorities are documented in the Product Backlog V3.
 servers:
   - url: /api/v1

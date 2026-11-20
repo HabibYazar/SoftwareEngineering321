@@ -3,6 +3,8 @@ package org.hmscommunity.security;
 import jakarta.servlet.DispatcherType;
 import org.hmscommunity.security.authentication.AccessTokenService;
 import org.hmscommunity.security.authentication.BearerTokenAuthenticationFilter;
+import org.hmscommunity.security.authorization.Permission;
+import org.hmscommunity.security.authorization.RolePermissions;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -29,7 +31,9 @@ public class HttpSecurityConfiguration {
             .formLogin(AbstractHttpConfigurer::disable)
             // Spring'in varsayılan /logout yönlendirmesi kapatılır; çıkış POST /api/v1/auth/logout ile yapılır.
             .logout(AbstractHttpConfigurer::disable)
-            .exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(problemHandler))
+            .exceptionHandling(exceptions -> exceptions
+                .authenticationEntryPoint(problemHandler)
+                .accessDeniedHandler(problemHandler))
             .addFilterBefore(new BearerTokenAuthenticationFilter(accessTokenService),
                 UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(authorize -> authorize
@@ -38,7 +42,17 @@ public class HttpSecurityConfiguration {
                 .requestMatchers("/api/v1/health").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").authenticated()
-                // Açıkça tanımlanmamış her yol reddedilir (varsayılan olarak kapalı).
+                // US-02: rol kuralları tek kaynaktan (RolePermissions) okunur.
+                .requestMatchers(HttpMethod.POST, "/api/v1/patients")
+                    .hasAnyAuthority(RolePermissions.authoritiesFor(Permission.PATIENT_REGISTER))
+                .requestMatchers(HttpMethod.GET, "/api/v1/patients")
+                    .hasAnyAuthority(RolePermissions.authoritiesFor(Permission.PATIENT_SEARCH))
+                .requestMatchers(HttpMethod.GET, "/api/v1/patients/*")
+                    .hasAnyAuthority(RolePermissions.authoritiesFor(Permission.PATIENT_VIEW))
+                .requestMatchers(HttpMethod.PUT, "/api/v1/patients/*")
+                    .hasAnyAuthority(RolePermissions.authoritiesFor(Permission.PATIENT_UPDATE))
+                // Açıkça tanımlanmamış her yol reddedilir (varsayılan olarak kapalı):
+                // anonim istek 401, kimliği doğrulanmış istek 403 alır.
                 .anyRequest().denyAll())
             .build();
     }
