@@ -6,9 +6,9 @@ import org.springframework.context.annotation.Fallback;
 import org.springframework.stereotype.Component;
 
 /**
- * #114 veri modeli entegre edilene kadar kullanılan geçici (fail-closed) uygulama.
+ * Veritabanı yapılandırılmadığında ({@code HMS_DB_URL} yok) kullanılan fail-closed uygulama.
  * Hiçbir hesap uydurmaz ve hiçbir girişe izin vermez; her çağrı HTTP 503 ile sonuçlanır.
- * Başka bir {@link StaffAccountDirectory} bean'i tanımlandığında {@link Fallback} sayesinde kullanılmaz.
+ * {@code JdbcStaffAccountDirectory} etkin olduğunda {@link Fallback} sayesinde kullanılmaz.
  */
 @Component
 @Fallback

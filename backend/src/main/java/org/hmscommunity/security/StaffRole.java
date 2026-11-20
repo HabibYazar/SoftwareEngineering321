@@ -30,4 +30,17 @@ public enum StaffRole {
     public String authority() {
         return "ROLE_" + name();
     }
+
+    /**
+     * Veritabanındaki {@code roles.code} değerini (sözleşmedeki adla aynı) role çevirir.
+     * Bilinmeyen bir kod sessizce yok sayılmaz; oturum açılmaması için hata verilir (fail-closed).
+     */
+    public static StaffRole fromApiName(String apiName) {
+        for (StaffRole role : values()) {
+            if (role.apiName.equals(apiName)) {
+                return role;
+            }
+        }
+        throw new IllegalArgumentException("Unknown staff role code: " + apiName);
+    }
 }

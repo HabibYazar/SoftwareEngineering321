@@ -12,9 +12,10 @@ import org.hmscommunity.patients.application.DuplicateNationalIdException;
 import org.hmscommunity.patients.application.PatientNotFoundException;
 import org.hmscommunity.patients.application.PatientRepository;
 import org.hmscommunity.patients.domain.Patient;
+import org.hmscommunity.security.AuthenticatedStaff;
 
 /**
- * #177 veri modeli hazır olana kadar backend davranışını doğrulamak için kullanılan test dublörü.
+ * Veritabanısız testlerde hasta kalıcılığını taklit eden test dublörü.
  * Veritabanındaki UNIQUE(national_id) kısıtını atomik {@code putIfAbsent} ile, ad aramasını ise
  * {@link PatientRepository#searchByName(String)} sözleşmesindeki anlamla (Türkçe, harf duyarsız) taklit eder.
  */
@@ -31,7 +32,7 @@ public class InMemoryPatientRepository implements PatientRepository {
     private final Map<String, UUID> idByNationalId = new ConcurrentHashMap<>();
 
     @Override
-    public Patient insert(Patient patient) {
+    public Patient insert(Patient patient, AuthenticatedStaff actor) {
         if (idByNationalId.putIfAbsent(patient.nationalId(), patient.id()) != null) {
             throw new DuplicateNationalIdException();
         }
@@ -59,7 +60,7 @@ public class InMemoryPatientRepository implements PatientRepository {
     }
 
     @Override
-    public Patient update(Patient patient) {
+    public Patient update(Patient patient, AuthenticatedStaff actor) {
         Patient existing = byId.get(patient.id());
         if (existing == null) {
             throw new PatientNotFoundException();

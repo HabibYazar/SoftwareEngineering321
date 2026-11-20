@@ -12,10 +12,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.hmscommunity.security.StaffRole;
-import org.hmscommunity.security.audit.AuditAction;
-import org.hmscommunity.security.audit.AuditEvent;
 import org.hmscommunity.testsupport.InMemoryStaffAccountDirectory;
-import org.hmscommunity.testsupport.RecordingAuditEventStore;
+import org.hmscommunity.testsupport.InMemoryStaffSessionStore;
 import org.hmscommunity.testsupport.SyntheticStaff;
 import org.hmscommunity.testsupport.TestDoublesConfiguration;
 import org.junit.jupiter.api.BeforeEach;
@@ -36,36 +34,42 @@ class AuthenticationApiIntegrationTest {
 
     @Autowired MockMvc mvc;
     @Autowired InMemoryStaffAccountDirectory staffAccounts;
-    @Autowired RecordingAuditEventStore auditStore;
+    @Autowired InMemoryStaffSessionStore sessions;
 
     @BeforeEach
     void resetState() {
         staffAccounts.resetToSyntheticAccounts();
-        auditStore.clear();
+        sessions.reset();
     }
 
-    // --- US-03 (#145): giriş/çıkış olaylarının HTTP akışında üretilmesi ---
+    // --- US-03: başarısız denemeler oturum deposuna (veritabanında auth_login_failure) iletilir ---
 
     @Test
-    void loginFailureSuccessAndLogoutProduceAuditEvents() throws Exception {
-        mvc.perform(post("/api/v1/auth/login")
-            .contentType(MediaType.APPLICATION_JSON)
-            .content(loginJson(SyntheticStaff.username(StaffRole.RECEPTIONIST), "wrong-password")));
-        String token = loginAs(mvc, StaffRole.RECEPTIONIST);
-        mvc.perform(post("/api/v1/auth/logout").header(HttpHeaders.AUTHORIZATION, bearer(token)));
-
-        assertThat(auditStore.events()).extracting(AuditEvent::action)
-            .containsExactly(AuditAction.LOGIN_FAILED, AuditAction.LOGIN_SUCCEEDED, AuditAction.LOGOUT);
-        assertThat(auditStore.events()).allSatisfy(event ->
-            assertThat(event.toString()).doesNotContain(token).doesNotContain(SyntheticStaff.PASSWORD));
-    }
-
-    @Test
-    void malformedLoginRequestIsNotRecordedAsALoginAttempt() throws Exception {
+    void failedLoginIsRecordedButMalformedRequestIsNot() throws Exception {
         mvc.perform(post("/api/v1/auth/login").contentType(MediaType.APPLICATION_JSON).content("{}"))
             .andExpect(status().isBadRequest());
+        mvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(loginJson(SyntheticStaff.username(StaffRole.RECEPTIONIST), "wrong-password")))
+            .andExpect(status().isUnauthorized());
 
-        assertThat(auditStore.events()).isEmpty();
+        assertThat(sessions.failedLogins()).hasSize(1);
+    }
+
+    @Test
+    void deactivatedAccountCannotLogInAndLosesItsSessions() throws Exception {
+        String token = loginAs(mvc, StaffRole.RECEPTIONIST);
+
+        sessions.deactivate(staffAccounts.get(StaffRole.RECEPTIONIST).id());
+
+        mvc.perform(post("/api/v1/auth/logout").header(HttpHeaders.AUTHORIZATION, bearer(token)))
+            .andExpect(status().isUnauthorized());
+        mvc.perform(post("/api/v1/auth/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(loginJson(SyntheticStaff.username(StaffRole.RECEPTIONIST), SyntheticStaff.PASSWORD)))
+            .andExpect(status().isUnauthorized())
+            .andExpect(jsonPath("$.code").value("INVALID_CREDENTIALS"))
+            .andExpect(jsonPath("$.accessToken").doesNotExist());
     }
 
     @Test

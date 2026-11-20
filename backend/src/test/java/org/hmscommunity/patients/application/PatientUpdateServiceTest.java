@@ -16,10 +16,7 @@ import org.hmscommunity.patients.domain.PatientDetails;
 import org.hmscommunity.patients.domain.RelativeInformation;
 import org.hmscommunity.security.AuthenticatedStaff;
 import org.hmscommunity.security.StaffRole;
-import org.hmscommunity.security.audit.AuditAction;
-import org.hmscommunity.security.audit.AuditEvent;
 import org.hmscommunity.security.audit.AuditService;
-import org.hmscommunity.security.audit.FieldChange;
 import org.hmscommunity.testsupport.InMemoryPatientRepository;
 import org.hmscommunity.testsupport.RecordingAuditEventStore;
 import org.hmscommunity.testsupport.SyntheticPatients;
@@ -27,12 +24,15 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** US-08 (#197): denetlenen hasta güncellemeleri. */
+/**
+ * US-08 (#197): hasta güncelleme iş kuralları. Güncellemenin önceki/sonraki değerli denetim kaydı veritabanı
+ * tetikleyicisinde yazıldığı için PostgreSQL entegrasyon testlerinde (PostgresPatientPersistenceTest) doğrulanır.
+ */
 class PatientUpdateServiceTest {
 
     private static final ValidatorFactory FACTORY = Validation.buildDefaultValidatorFactory();
     private static final AuthenticatedStaff RECEPTIONIST =
-        new AuthenticatedStaff(UUID.randomUUID(), "test.receptionist", StaffRole.RECEPTIONIST);
+        new AuthenticatedStaff(UUID.randomUUID(), "test.receptionist", StaffRole.RECEPTIONIST, UUID.randomUUID());
 
     private final InMemoryPatientRepository repository = new InMemoryPatientRepository();
     private final RecordingAuditEventStore auditStore = new RecordingAuditEventStore();
@@ -66,35 +66,20 @@ class PatientUpdateServiceTest {
     }
 
     @Test
-    void successfulUpdateIsAuditedWithBeforeAndAfterValues() {
-        PatientDetails changed = withPhone(mild.details(), "0555 000 00 77");
+    void updateDoesNotProduceAJavaSideDuplicateAuditEvent() {
+        service.update(mild.id(), null, withPhone(mild.details(), "0555 000 00 77"), RECEPTIONIST);
 
-        service.update(mild.id(), null, changed, RECEPTIONIST);
-
-        AuditEvent event = auditStore.events(AuditAction.UPDATE).getFirst();
-        assertThat(event.actor()).isEqualTo(RECEPTIONIST);
-        assertThat(event.resourceId()).isEqualTo(mild.id().toString());
-        assertThat(event.changes()).containsExactly(new FieldChange("phone", "0555 000 00 01", "0555 000 00 77"));
+        assertThat(auditStore.events()).isEmpty();
     }
 
     @Test
-    void auditNeverContainsTheNationalId() {
-        service.update(mild.id(), SyntheticPatients.NATIONAL_ID, withPhone(mild.details(), "0555 000 00 78"), RECEPTIONIST);
-
-        assertThat(auditStore.events().getFirst().toString()).doesNotContain(SyntheticPatients.NATIONAL_ID);
-    }
-
-    @Test
-    void addingRelativeRecordsEachRelativeField() {
+    void raisingToAdvancedWithRelativeStoresTheRelative() {
         PatientDetails advanced = withLevelAndRelative(mild.details(), ConditionLevel.ADVANCED, SyntheticPatients.relative());
 
-        service.update(mild.id(), null, advanced, RECEPTIONIST);
+        Patient updated = service.update(mild.id(), null, advanced, RECEPTIONIST);
 
-        assertThat(auditStore.events().getFirst().changes()).containsExactly(
-            new FieldChange("conditionLevel", "MILD", "ADVANCED"),
-            new FieldChange("relativeInformation.fullName", null, "Deneme Yakın"),
-            new FieldChange("relativeInformation.relationship", null, "Sibling"),
-            new FieldChange("relativeInformation.phone", null, "0555 000 00 99"));
+        assertThat(updated.conditionLevel()).isEqualTo(ConditionLevel.ADVANCED);
+        assertThat(updated.relativeInformation()).isEqualTo(SyntheticPatients.relative());
     }
 
     @Test
@@ -156,20 +141,6 @@ class PatientUpdateServiceTest {
         assertThat(auditStore.events()).isEmpty();
     }
 
-    @Test
-    void identicalUpdateIsStillAuditedWithNoChanges() {
-        service.update(mild.id(), null, mild.details(), RECEPTIONIST);
-
-        assertThat(auditStore.events(AuditAction.UPDATE)).singleElement()
-            .satisfies(event -> assertThat(event.changes()).isEmpty());
-    }
-
-    @Test
-    void recordableFieldsMatchTheEditableProfile() {
-        assertThat(PatientChangeTracking.snapshot(mild).keySet())
-            .containsExactlyInAnyOrderElementsOf(PatientChangeTracking.RECORDABLE_FIELDS)
-            .doesNotContain("nationalId");
-    }
 
     private static PatientDetails withPhone(PatientDetails details, String phone) {
         return new PatientDetails(details.firstName(), details.lastName(), details.dateOfBirth(), details.gender(),

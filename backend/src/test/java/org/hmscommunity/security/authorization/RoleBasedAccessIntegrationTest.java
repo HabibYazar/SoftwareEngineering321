@@ -11,9 +11,11 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.Arrays;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import org.hmscommunity.security.StaffRole;
+import org.hmscommunity.testsupport.InMemoryStaffSessionStore;
 import org.hmscommunity.testsupport.TestDoublesConfiguration;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -31,7 +33,8 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 
 /**
  * US-02 (#132): yedi rolün tamamı için izinli ve yasak istekleri gerçek filtre zinciri üzerinden doğrular.
- * Burada yalnızca yetkilendirme kararı test edilir; uç noktaların iş davranışı kendi testlerindedir.
+ * Beklenen matris veritabanının başlangıç matrisidir; aynı beklentinin gerçek PostgreSQL ile de sağlandığı
+ * {@code PostgresAuthorizationTest} içinde doğrulanır. Uç noktaların iş davranışı kendi testlerindedir.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -42,16 +45,16 @@ class RoleBasedAccessIntegrationTest {
 
     @Autowired MockMvc mvc;
 
-    enum ProtectedRoute {
-        REGISTER_PATIENT(Permission.PATIENT_REGISTER,
+    public enum ProtectedRoute {
+        REGISTER_PATIENT(Permission.PATIENT_CREATE,
             () -> post("/api/v1/patients").contentType(MediaType.APPLICATION_JSON).content("{}")),
-        SEARCH_PATIENTS(Permission.PATIENT_SEARCH, () -> get("/api/v1/patients").param("name", "test")),
+        SEARCH_PATIENTS(Permission.PATIENT_VIEW, () -> get("/api/v1/patients").param("name", "test")),
         VIEW_PATIENT(Permission.PATIENT_VIEW, () -> get(SOME_PATIENT)),
         UPDATE_PATIENT(Permission.PATIENT_UPDATE,
             () -> put(SOME_PATIENT).contentType(MediaType.APPLICATION_JSON).content("{}"));
 
-        final Permission permission;
-        final Supplier<MockHttpServletRequestBuilder> request;
+        public final Permission permission;
+        public final Supplier<MockHttpServletRequestBuilder> request;
 
         ProtectedRoute(Permission permission, Supplier<MockHttpServletRequestBuilder> request) {
             this.permission = permission;
@@ -59,7 +62,7 @@ class RoleBasedAccessIntegrationTest {
         }
     }
 
-    static Stream<Arguments> everyRoleOnEveryRoute() {
+    public static Stream<Arguments> everyRoleOnEveryRoute() {
         return Arrays.stream(StaffRole.values())
             .flatMap(role -> Arrays.stream(ProtectedRoute.values()).map(route -> Arguments.of(role, route)));
     }
@@ -72,7 +75,8 @@ class RoleBasedAccessIntegrationTest {
         int statusCode = mvc.perform(route.request.get().header(HttpHeaders.AUTHORIZATION, bearer(token)))
             .andReturn().getResponse().getStatus();
 
-        if (RolePermissions.isGranted(role, route.permission)) {
+        if (InMemoryStaffSessionStore.INITIAL_DATABASE_MATRIX.getOrDefault(role, Set.of())
+                .contains(route.permission)) {
             // İzinli rol yetkilendirmeyi geçer; sonucu (200/201/400/404) iş kuralları belirler.
             assertThat(statusCode).isNotIn(401, 403);
         } else {
