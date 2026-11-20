@@ -106,7 +106,12 @@ paths:
     post:
       tags: [Patients]
       operationId: createPatient
-      summary: Register a synthetic patient (planned)
+      summary: Register a synthetic patient (US-06, implemented; persistence pending #177)
+      description: |
+        Receptionist only. All field errors are returned together in Problem.errors
+        (code VALIDATION_FAILED); rejected values are never echoed back. A duplicate
+        national ID returns 409 (code DUPLICATE_NATIONAL_ID). Successful registration
+        is recorded as an audit CREATE event.
       requestBody:
         required: true
         content:
@@ -115,6 +120,10 @@ paths:
       responses:
         '201':
           description: Patient created
+          headers:
+            Location:
+              description: URL of the created patient
+              schema: { type: string, format: uri }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Patient' }
@@ -122,6 +131,7 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /patients/{patientId}:
     get:
       tags: [Patients]
@@ -481,21 +491,30 @@ components:
       properties:
         fullName: { type: string, minLength: 1, maxLength: 150 }
         relationship: { type: string, minLength: 1, maxLength: 80 }
-        phone: { type: string, minLength: 1, maxLength: 32 }
+        phone: { $ref: '#/components/schemas/PhoneNumber' }
+    PhoneNumber:
+      type: string
+      minLength: 7
+      maxLength: 32
+      pattern: '^\+?[0-9][0-9 ()-]{5,29}[0-9]$'
+      description: Optional leading +, digits with spaces, parentheses or hyphens; starts and ends with a digit
+      example: '+90 (555) 000-00-00'
     NewPatient:
       type: object
       description: |
         US-06: synthetic 11-digit national ID must be unique. Relative information
-        is mandatory when conditionLevel is ADVANCED; validation uses 400 for
-        missing/invalid fields and 409 for duplicate national ID.
+        is mandatory when conditionLevel is ADVANCED (field error code
+        RequiredForAdvancedCondition) and optional otherwise; when provided, all
+        three relative fields are required. Validation uses 400 for missing/invalid
+        fields and 409 for duplicate national ID. Leading/trailing whitespace is trimmed.
       required: [firstName, lastName, nationalId, dateOfBirth, gender, phone, address, conditionLevel]
       properties:
         firstName: { type: string, minLength: 1, maxLength: 100 }
         lastName: { type: string, minLength: 1, maxLength: 100 }
         nationalId: { type: string, pattern: '^[0-9]{11}$', description: Synthetic test ID only }
-        dateOfBirth: { type: string, format: date }
+        dateOfBirth: { type: string, format: date, description: Must not be in the future }
         gender: { type: string, minLength: 1, maxLength: 40 }
-        phone: { type: string, minLength: 1, maxLength: 32 }
+        phone: { $ref: '#/components/schemas/PhoneNumber' }
         address: { type: string, minLength: 1, maxLength: 500 }
         conditionLevel: { type: string, enum: [MILD, MODERATE, ADVANCED] }
         relativeInformation: { $ref: '#/components/schemas/RelativeInformation' }
