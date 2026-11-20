@@ -15,4 +15,9 @@ public class TestDoublesConfiguration {
     InMemoryStaffAccountDirectory inMemoryStaffAccountDirectory() {
         return new InMemoryStaffAccountDirectory();
     }
+
+    @Bean
+    RecordingAuditEventStore recordingAuditEventStore() {
+        return new RecordingAuditEventStore();
+    }
 }
