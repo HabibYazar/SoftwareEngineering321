@@ -20,4 +20,9 @@ public class TestDoublesConfiguration {
     RecordingAuditEventStore recordingAuditEventStore() {
         return new RecordingAuditEventStore();
     }
+
+    @Bean
+    InMemoryPatientRepository inMemoryPatientRepository() {
+        return new InMemoryPatientRepository();
+    }
 }
