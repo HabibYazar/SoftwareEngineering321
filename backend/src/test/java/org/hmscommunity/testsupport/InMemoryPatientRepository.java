@@ -9,6 +9,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import org.hmscommunity.patients.application.DuplicateNationalIdException;
+import org.hmscommunity.patients.application.PatientNotFoundException;
 import org.hmscommunity.patients.application.PatientRepository;
 import org.hmscommunity.patients.domain.Patient;
 
@@ -55,6 +56,18 @@ public class InMemoryPatientRepository implements PatientRepository {
             .filter(patient -> (patient.firstName() + " " + patient.lastName()).toLowerCase(TURKISH).contains(needle))
             .sorted(ORDER)
             .toList();
+    }
+
+    @Override
+    public Patient update(Patient patient) {
+        Patient existing = byId.get(patient.id());
+        if (existing == null) {
+            throw new PatientNotFoundException();
+        }
+        // Gerçek adaptörde olduğu gibi ulusal kimlik numarası sütunu güncellemeye dahil edilmez.
+        Patient stored = existing.withDetails(patient.details());
+        byId.put(stored.id(), stored);
+        return stored;
     }
 
     public int count() {
