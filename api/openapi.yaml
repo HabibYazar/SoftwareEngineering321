@@ -7,8 +7,10 @@ info:
     Week 8 MVP: login, roles/audit foundations, patient registration/search,
     clinician directory, appointments, outpatient examination and EMR.
     Week 10 final: laboratory requests, results and physician review.
-    Only GET /health currently exists in the scaffold; all other operations
-    remain planned. Synthetic test data only; not for clinical use.
+    Implemented in the backend: GET /health, POST /auth/login and
+    POST /auth/logout. Operations whose persistence integration is still
+    pending respond 503 (code INTEGRATION_PENDING) instead of fabricating data.
+    All other operations remain planned. Synthetic test data only; not for clinical use.
     Staff roles: Administrator, Receptionist, Physician, Nurse,
     Patient Care Assistant, Lab Technician, Cleaning Staff.
     User-story IDs and priorities are documented in the Product Backlog V3.
@@ -43,7 +45,12 @@ paths:
     post:
       tags: [Authentication]
       operationId: loginStaff
-      summary: Staff login (US-01, planned for MVP)
+      summary: Staff login (US-01, implemented)
+      description: |
+        Validates the username/password against BCrypt hashes from the staff
+        account store (#114). Wrong passwords and unknown usernames return the
+        same 401 response (code INVALID_CREDENTIALS) and never issue a token.
+        Responds 503 (INTEGRATION_PENDING) while the staff account store is not integrated.
       security: []
       requestBody:
         required: true
@@ -58,11 +65,13 @@ paths:
               schema: { $ref: '#/components/schemas/LoginResponse' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /auth/logout:
     post:
       tags: [Authentication]
       operationId: logoutStaff
-      summary: Invalidate the current staff session/token (US-01, planned)
+      summary: Invalidate the current staff session/token (US-01, implemented)
+      description: Revokes the bearer token used for this request server-side; any later request with it returns 401.
       responses:
         '204': { description: Signed out }
         '401': { $ref: '#/components/responses/Unauthorized' }
@@ -414,8 +423,10 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT
-      description: Planned authentication mechanism; not implemented yet.
+      bearerFormat: opaque
+      description: |
+        Opaque random token returned by POST /auth/login. Validated server-side,
+        revoked by POST /auth/logout and expires at LoginResponse.expiresAt.
   parameters:
     patientId:
       name: patientId
@@ -448,14 +459,15 @@ components:
       type: object
       required: [username, password]
       properties:
-        username: { type: string, minLength: 1 }
-        password: { type: string, format: password, minLength: 1 }
+        username: { type: string, minLength: 1, maxLength: 100 }
+        password: { type: string, format: password, minLength: 1, maxLength: 128 }
     LoginResponse:
       type: object
-      required: [accessToken, tokenType, role]
+      required: [accessToken, tokenType, role, expiresAt]
       properties:
-        accessToken: { type: string, description: Planned demo token }
+        accessToken: { type: string, description: 'Opaque bearer token; send as "Authorization: Bearer <token>"' }
         tokenType: { type: string, enum: [Bearer] }
+        expiresAt: { type: string, format: date-time, description: Absolute expiry of the token }
         role:
           type: string
           enum: [Administrator, Receptionist, Physician, Nurse, PatientCareAssistant, LabTechnician, CleaningStaff]
@@ -597,6 +609,16 @@ components:
         status: { type: integer, minimum: 400, maximum: 599 }
         code: { type: string }
         detail: { type: string }
+        errors:
+          type: array
+          description: Field-level validation errors (present when code is VALIDATION_FAILED)
+          items:
+            type: object
+            required: [field, code, message]
+            properties:
+              field: { type: string, example: relativeInformation.phone }
+              code: { type: string, example: NotBlank }
+              message: { type: string }
   responses:
     BadRequest:
       description: Invalid request data
@@ -620,6 +642,11 @@ components:
           schema: { $ref: '#/components/schemas/Problem' }
     Conflict:
       description: Requested state conflicts with existing data
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    ServiceUnavailable:
+      description: Required persistence integration is pending (code INTEGRATION_PENDING)
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
