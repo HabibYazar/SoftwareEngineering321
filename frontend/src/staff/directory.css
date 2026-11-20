@@ -1,0 +1,25 @@
+/* Seçenekler ve sonuçlar alana göre yeni satıra geçer, uzun departman adları taşmaz. */
+.department-grid, .doctor-grid { display: grid; gap: var(--space-3); }
+.department-grid { grid-template-columns: repeat(auto-fill, minmax(min(10.5rem, 100%), 1fr)); }
+.department-button.button {
+  justify-content: start; text-align: start; min-height: 58px; overflow-wrap: anywhere;
+}
+.department-button .icon { color: var(--accent); }
+.department-button.button[aria-pressed="true"] {
+  background: var(--accent-soft); color: var(--accent); border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+.directory-results { border-top: 1px solid var(--border); margin-top: var(--space-8); padding-top: var(--space-6); }
+.results-heading { display: flex; gap: var(--space-4); flex-wrap: wrap; justify-content: space-between; align-items: end; }
+.results-heading h2 { margin: 0; }
+.results-heading .field { flex: 0 1 17.5rem; }
+.result-count, .result-state { margin: var(--space-4) 0; }
+.doctor-grid {
+  grid-template-columns: repeat(auto-fill, minmax(min(15rem, 100%), 1fr));
+  padding: 0; margin: 0; list-style: none;
+}
+.doctor-card { display: flex; align-items: center; gap: var(--space-3); height: 100%; padding: var(--space-4); }
+.doctor-card p { font-size: 0.9rem; margin: 0; overflow-wrap: anywhere; }
+@media (max-width: 31rem) {
+  .results-heading { display: grid; }
+}
