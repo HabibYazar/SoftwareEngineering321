@@ -1,24 +1,26 @@
 package org.hmscommunity.security.authentication;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import org.hmscommunity.security.AuthenticatedStaff;
+import org.hmscommunity.security.authorization.Permission;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 /**
  * Geçerli bir bearer token ile doğrulanmış isteğin Spring Security kimliği.
- * Kimlik bilgisi (credentials) olarak ham token tutulmaz; çıkış işlemi için yalnızca
- * oturum anahtarı (token özeti) saklanır.
+ * Yetkiler, rol ({@code ROLE_*}) ve oturumun veritabanından okunan izinleridir ({@link Permission}).
+ * Kimlik bilgisi (credentials) olarak ham token tutulmaz; çıkış için yalnızca oturum kimliği saklanır.
  */
 public final class StaffAuthenticationToken extends AbstractAuthenticationToken {
 
     private final AuthenticatedStaff staff;
-    private final String sessionKey;
 
     public StaffAuthenticationToken(StaffSession session) {
-        super(List.of(new SimpleGrantedAuthority(session.staff().role().authority())));
+        super(authoritiesOf(session));
         this.staff = session.staff();
-        this.sessionKey = session.sessionKey();
         super.setAuthenticated(true);
     }
 
@@ -32,8 +34,8 @@ public final class StaffAuthenticationToken extends AbstractAuthenticationToken 
         return null;
     }
 
-    public String sessionKey() {
-        return sessionKey;
+    public UUID sessionId() {
+        return staff.sessionId();
     }
 
     @Override
@@ -47,12 +49,19 @@ public final class StaffAuthenticationToken extends AbstractAuthenticationToken 
 
     @Override
     public boolean equals(Object other) {
-        return other instanceof StaffAuthenticationToken that && super.equals(that)
-            && sessionKey.equals(that.sessionKey);
+        return other instanceof StaffAuthenticationToken that && super.equals(that);
     }
 
     @Override
     public int hashCode() {
-        return 31 * super.hashCode() + sessionKey.hashCode();
+        return super.hashCode();
+    }
+
+    private static List<GrantedAuthority> authoritiesOf(StaffSession session) {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority(session.staff().role().authority()));
+        session.permissions().stream().sorted()
+            .forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission.authority())));
+        return authorities;
     }
 }

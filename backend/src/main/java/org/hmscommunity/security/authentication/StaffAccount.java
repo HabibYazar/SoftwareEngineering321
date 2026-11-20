@@ -5,9 +5,11 @@ import java.util.UUID;
 import org.hmscommunity.security.StaffRole;
 
 /**
- * Kimlik doğrulama için gereken asgari personel hesabı görünümü.
- * Veri modeli (#114) bu alanları sağlamakla yükümlüdür; {@code passwordHash} BCrypt özetidir,
- * düz metin parola asla saklanmaz.
+ * Kimlik doğrulama için gereken asgari personel hesabı görünümü ({@code user_accounts} + rolü).
+ *
+ * @param id kullanıcı hesabının kimliği ({@code user_accounts.id}); veritabanı aktör bağlamında kullanılır
+ * @param username veritabanında küçük harfe çevrilmiş olarak saklanan kullanıcı adı
+ * @param passwordHash BCrypt özeti; düz metin parola asla saklanmaz
  */
 public record StaffAccount(UUID id, String username, String passwordHash, StaffRole role) {
 

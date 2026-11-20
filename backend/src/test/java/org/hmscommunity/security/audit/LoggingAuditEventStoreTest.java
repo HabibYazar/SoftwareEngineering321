@@ -20,19 +20,19 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 class LoggingAuditEventStoreTest {
 
     @Test
-    void interimStoreLogsMetadataButNeverFieldValues(CapturedOutput output) {
-        AuthenticatedStaff actor = new AuthenticatedStaff(UUID.randomUUID(), "test.receptionist", StaffRole.RECEPTIONIST);
+    void interimStoreLogsMetadataButNeverDetailValues(CapturedOutput output) {
+        AuthenticatedStaff actor = new AuthenticatedStaff(UUID.randomUUID(), "test.receptionist",
+            StaffRole.RECEPTIONIST, UUID.randomUUID());
+        UUID patientId = UUID.randomUUID();
         AuditEvent event = new AuditEvent(UUID.randomUUID(), Instant.parse("2026-11-20T10:00:00Z"),
-            AuditAction.UPDATE, actor, AuditResourceType.PATIENT, "patient-1",
-            List.of(new FieldChange("phone", "05550000001", "05550000002")), Map.of());
+            AuditAction.VIEW, actor, AuditResourceType.PATIENT, patientId, Map.of("accessChannel", "SEARCH_RESULT"));
 
         new LoggingAuditEventStore().append(event);
 
         assertThat(output.getOut())
-            .contains("action=UPDATE", "resourceType=PATIENT", "resourceId=patient-1", "changedFields=[phone]",
+            .contains("action=VIEW", "resourceType=PATIENT", "resourceId=" + patientId, "detailKeys=[accessChannel]",
                 "actorRole=RECEPTIONIST", event.id().toString())
-            .doesNotContain("05550000001")
-            .doesNotContain("05550000002");
+            .doesNotContain("SEARCH_RESULT");
     }
 
     /** #145: denetim kayıtları iş API'leri üzerinden düzenlenemez veya silinemez. */

@@ -36,7 +36,7 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 class PatientSearchIntegrationTest {
 
     private static final AuthenticatedStaff SEEDER =
-        new AuthenticatedStaff(UUID.randomUUID(), "test.seeder", StaffRole.RECEPTIONIST);
+        new AuthenticatedStaff(UUID.randomUUID(), "test.seeder", StaffRole.RECEPTIONIST, UUID.randomUUID());
 
     @Autowired MockMvc mvc;
     @Autowired InMemoryPatientRepository patients;
@@ -112,7 +112,7 @@ class PatientSearchIntegrationTest {
             .andExpect(status().isOk());
 
         assertThat(auditStore.events(AuditAction.VIEW)).singleElement().satisfies(event -> {
-            assertThat(event.resourceId()).isEqualTo(mild.id().toString());
+            assertThat(event.resourceId()).isEqualTo(mild.id());
             assertThat(event.actor().username()).isEqualTo("test.receptionist");
         });
     }

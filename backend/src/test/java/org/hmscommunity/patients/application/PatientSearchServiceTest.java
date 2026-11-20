@@ -32,7 +32,7 @@ class PatientSearchServiceTest {
 
     private static final ValidatorFactory FACTORY = Validation.buildDefaultValidatorFactory();
     private static final AuthenticatedStaff RECEPTIONIST =
-        new AuthenticatedStaff(UUID.randomUUID(), "test.receptionist", StaffRole.RECEPTIONIST);
+        new AuthenticatedStaff(UUID.randomUUID(), "test.receptionist", StaffRole.RECEPTIONIST, UUID.randomUUID());
 
     private final InMemoryPatientRepository repository = new InMemoryPatientRepository();
     private final RecordingAuditEventStore auditStore = new RecordingAuditEventStore();
@@ -102,7 +102,7 @@ class PatientSearchServiceTest {
 
         assertThat(auditStore.events(AuditAction.VIEW))
             .extracting(AuditEvent::resourceId)
-            .containsExactly(ayse.id().toString(), isik.id().toString(), ileri.id().toString());
+            .containsExactly(ayse.id(), isik.id(), ileri.id());
         assertThat(auditStore.events()).allSatisfy(event -> {
             assertThat(event.details()).containsEntry("accessChannel", "SEARCH_RESULT");
             assertThat(event.actor()).isEqualTo(RECEPTIONIST);
@@ -144,7 +144,7 @@ class PatientSearchServiceTest {
 
         assertThat(auditStore.events()).singleElement().satisfies(event -> {
             assertThat(event.action()).isEqualTo(AuditAction.VIEW);
-            assertThat(event.resourceId()).isEqualTo(ayse.id().toString());
+            assertThat(event.resourceId()).isEqualTo(ayse.id());
             assertThat(event.details()).containsEntry("accessChannel", "RECORD");
         });
     }

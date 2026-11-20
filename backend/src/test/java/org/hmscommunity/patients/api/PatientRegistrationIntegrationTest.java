@@ -13,7 +13,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import java.util.Map;
 import org.hmscommunity.security.StaffRole;
-import org.hmscommunity.security.audit.AuditAction;
 import org.hmscommunity.testsupport.InMemoryPatientRepository;
 import org.hmscommunity.testsupport.RecordingAuditEventStore;
 import org.hmscommunity.testsupport.SyntheticPatients;
@@ -63,8 +62,8 @@ class PatientRegistrationIntegrationTest {
             .andExpect(jsonPath("$.details").doesNotExist());
 
         assertThat(patients.count()).isEqualTo(1);
-        assertThat(auditStore.events(AuditAction.CREATE)).singleElement()
-            .satisfies(event -> assertThat(event.actor().role()).isEqualTo(StaffRole.RECEPTIONIST));
+        // Oluşturma kaydını veritabanı tetikleyicisi yazar (PostgresPatientPersistenceTest); Java ayrıca üretmez.
+        assertThat(auditStore.events()).isEmpty();
     }
 
     @Test

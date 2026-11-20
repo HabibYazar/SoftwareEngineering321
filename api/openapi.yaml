@@ -9,15 +9,19 @@ info:
     Week 10 final: laboratory requests, results and physician review.
     Implemented in the backend: GET /health, POST /auth/login, POST /auth/logout,
     POST /patients, GET /patients, GET /patients/{patientId} and
-    PUT /patients/{patientId}. Operations whose persistence integration is still
-    pending respond 503 (code INTEGRATION_PENDING) instead of fabricating data.
+    PUT /patients/{patientId}, persisted in PostgreSQL (Flyway migrations V1-V3).
+    If the backend runs without a configured database, these operations respond
+    503 (code INTEGRATION_PENDING) instead of fabricating data.
     All other operations remain planned. Synthetic test data only; not for clinical use.
     Staff roles: Administrator, Receptionist, Physician, Nurse,
     Patient Care Assistant, Lab Technician, Cleaning Staff.
     Authorization (US-02) is deny-by-default: missing/invalid/revoked token -> 401,
-    authenticated role without permission -> 403 (code ACCESS_DENIED). Until the
-    Product Owner approves the role-permission matrix, patient operations are
-    granted only to Receptionist, as stated in US-06/US-07/US-08.
+    authenticated role without permission -> 403 (code ACCESS_DENIED). Permissions
+    are read from the database role-permission matrix on every request (Administrator
+    holds every permission; the initial matrix grants PATIENT_CREATE, PATIENT_VIEW and
+    PATIENT_UPDATE to Receptionist; other roles have no patient permission yet).
+    Audit (US-03): sign-in/out and patient data changes are logged by the database in
+    the same transaction; record views are logged by the backend.
     User-story IDs and priorities are documented in the Product Backlog V3.
 servers:
   - url: /api/v1
@@ -52,10 +56,11 @@ paths:
       operationId: loginStaff
       summary: Staff login (US-01, implemented)
       description: |
-        Validates the username/password against BCrypt hashes from the staff
-        account store (#114). Wrong passwords and unknown usernames return the
-        same 401 response (code INVALID_CREDENTIALS) and never issue a token.
-        Responds 503 (INTEGRATION_PENDING) while the staff account store is not integrated.
+        Validates the username/password against BCrypt hashes in the staff account
+        store. The username is matched case-insensitively (usernames are stored in
+        lower case). Wrong passwords, unknown usernames and deactivated accounts return
+        the same 401 response (code INVALID_CREDENTIALS) and never issue a token.
+        Responds 503 (INTEGRATION_PENDING) if the backend runs without a database.
       security: []
       requestBody:
         required: true
@@ -76,7 +81,7 @@ paths:
       tags: [Authentication]
       operationId: logoutStaff
       summary: Invalidate the current staff session/token (US-01, implemented)
-      description: Revokes the bearer token used for this request server-side; any later request with it returns 401.
+      description: Ends the server-side session of the bearer token used for this request; any later request with it returns 401.
       responses:
         '204': { description: Signed out }
         '401': { $ref: '#/components/responses/Unauthorized' }
@@ -84,14 +89,14 @@ paths:
     get:
       tags: [Patients]
       operationId: searchPatients
-      summary: Search synthetic patients by name or national ID (US-07, implemented; persistence pending #177)
+      summary: Search synthetic patients by name or national ID (US-07, implemented)
       description: |
-        Receptionist only. Supply exactly one of: an exact 11-digit synthetic
+        Requires PATIENT_VIEW. Supply exactly one of: an exact 11-digit synthetic
         national ID, or a name fragment matched case-insensitively (Turkish rules)
         anywhere in the first name, last name or "first last". Results are ordered
-        by last name, first name. No match returns 200 with an empty array.
+        by last name, first name (Turkish collation), then id. No match returns 200 with an empty array.
         Neither or both parameters return 400 (field searchCriteria). Each returned
-        patient is recorded as an audit VIEW event (accessChannel SEARCH_RESULT).
+        patient is recorded as an audit RECORD_VIEW event (accessChannel SEARCH_RESULT).
       parameters:
         - in: query
           name: name
@@ -114,12 +119,13 @@ paths:
     post:
       tags: [Patients]
       operationId: createPatient
-      summary: Register a synthetic patient (US-06, implemented; persistence pending #177)
+      summary: Register a synthetic patient (US-06, implemented)
       description: |
-        Receptionist only. All field errors are returned together in Problem.errors
+        Requires PATIENT_CREATE. All field errors are returned together in Problem.errors
         (code VALIDATION_FAILED); rejected values are never echoed back. A duplicate
-        national ID returns 409 (code DUPLICATE_NATIONAL_ID). Successful registration
-        is recorded as an audit CREATE event.
+        national ID returns 409 (code DUPLICATE_NATIONAL_ID), also for concurrent requests.
+        Successful registration is recorded in the audit log (RECORD_CREATE, field names
+        only) in the same database transaction.
       requestBody:
         required: true
         content:
@@ -144,8 +150,8 @@ paths:
     get:
       tags: [Patients]
       operationId: getPatient
-      summary: Retrieve a patient record (US-07/US-08, implemented; persistence pending #177)
-      description: Receptionist only. Recorded as an audit VIEW event (accessChannel RECORD).
+      summary: Retrieve a patient record (US-07/US-08, implemented)
+      description: Requires PATIENT_VIEW. Recorded as an audit RECORD_VIEW event (accessChannel RECORD).
       parameters:
         - $ref: '#/components/parameters/patientId'
       responses:
@@ -162,14 +168,15 @@ paths:
     put:
       tags: [Patients]
       operationId: updatePatient
-      summary: Update patient information (US-08, implemented; persistence pending #177/#196)
+      summary: Update patient information (US-08, implemented)
       description: |
-        Receptionist only. Full replacement of every field except the national ID;
+        Requires PATIENT_UPDATE. Full replacement of every field except the national ID;
         US-06 validation rules apply (including the ADVANCED relative requirement).
         Omitting relativeInformation removes it, which is only allowed for MILD/MODERATE.
         A nationalId that differs from the stored value returns 400 (field nationalId,
-        code Immutable). A successful update is recorded as an audit UPDATE event with
-        privacy-filtered before/after values of the changed fields.
+        code Immutable), for every role including Administrator. A successful update is
+        recorded in the audit log (RECORD_UPDATE) with the before/after values of the
+        changed fields, in the same database transaction.
       parameters:
         - $ref: '#/components/parameters/patientId'
       requestBody:
@@ -552,7 +559,7 @@ components:
         firstName: { type: string, minLength: 1, maxLength: 100 }
         lastName: { type: string, minLength: 1, maxLength: 100 }
         nationalId: { type: string, pattern: '^[0-9]{11}$', description: Synthetic test ID only }
-        dateOfBirth: { type: string, format: date, description: Must not be in the future }
+        dateOfBirth: { type: string, format: date, description: 'Between 1900-01-01 and today (field error codes Min, PastOrPresent)' }
         gender: { type: string, minLength: 1, maxLength: 40 }
         phone: { $ref: '#/components/schemas/PhoneNumber' }
         address: { type: string, minLength: 1, maxLength: 500 }
@@ -575,7 +582,7 @@ components:
         firstName: { type: string, minLength: 1, maxLength: 100 }
         lastName: { type: string, minLength: 1, maxLength: 100 }
         nationalId: { type: string, pattern: '^[0-9]{11}$', description: Optional; must match the stored value }
-        dateOfBirth: { type: string, format: date, description: Must not be in the future }
+        dateOfBirth: { type: string, format: date, description: 'Between 1900-01-01 and today (field error codes Min, PastOrPresent)' }
         gender: { type: string, minLength: 1, maxLength: 40 }
         phone: { $ref: '#/components/schemas/PhoneNumber' }
         address: { type: string, minLength: 1, maxLength: 500 }
@@ -732,7 +739,7 @@ components:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }
     ServiceUnavailable:
-      description: Required persistence integration is pending (code INTEGRATION_PENDING)
+      description: The backend runs without a configured database (code INTEGRATION_PENDING)
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }

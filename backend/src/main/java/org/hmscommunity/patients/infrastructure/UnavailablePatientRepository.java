@@ -6,13 +6,14 @@ import java.util.UUID;
 import org.hmscommunity.common.IntegrationPendingException;
 import org.hmscommunity.patients.application.PatientRepository;
 import org.hmscommunity.patients.domain.Patient;
+import org.hmscommunity.security.AuthenticatedStaff;
 import org.springframework.context.annotation.Fallback;
 import org.springframework.stereotype.Component;
 
 /**
- * #177/#196 hasta veri modeli entegre edilene kadar kullanılan geçici (fail-closed) uygulama.
- * Veri saklamaz ve uydurmaz; her çağrı HTTP 503 ile sonuçlanır. Gerçek bir {@link PatientRepository}
- * bean'i eklendiğinde {@link Fallback} sayesinde kullanılmaz.
+ * Veritabanı yapılandırılmadığında ({@code HMS_DB_URL} yok) kullanılan fail-closed uygulama.
+ * Veri saklamaz ve uydurmaz; her çağrı HTTP 503 ile sonuçlanır. {@link JdbcPatientRepository} etkin
+ * olduğunda {@link Fallback} sayesinde kullanılmaz.
  */
 @Component
 @Fallback
@@ -21,7 +22,7 @@ class UnavailablePatientRepository implements PatientRepository {
     private static final String INTEGRATION = "patient records (#177, #196)";
 
     @Override
-    public Patient insert(Patient patient) {
+    public Patient insert(Patient patient, AuthenticatedStaff actor) {
         throw new IntegrationPendingException(INTEGRATION);
     }
 
@@ -41,7 +42,7 @@ class UnavailablePatientRepository implements PatientRepository {
     }
 
     @Override
-    public Patient update(Patient patient) {
+    public Patient update(Patient patient, AuthenticatedStaff actor) {
         throw new IntegrationPendingException(INTEGRATION);
     }
 }

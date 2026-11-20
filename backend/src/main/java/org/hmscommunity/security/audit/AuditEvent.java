@@ -1,20 +1,21 @@
 package org.hmscommunity.security.audit;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import org.hmscommunity.security.AuthenticatedStaff;
 
 /**
- * Değiştirilemez (immutable) tek bir denetim kaydı.
+ * Değiştirilemez (immutable) tek bir denetim olayı.
  *
  * <p>İçerik kuralları: parola, parola özeti, ham veya özetlenmiş token ve tıbbi içerik ASLA yer almaz.
  * {@code details} yalnızca sabit, makine tarafından okunabilir kodlar içerir (serbest metin içermez).
+ * Kalıcı depo kendi kimliğini ve zaman damgasını atar; buradaki {@code id} ve {@code occurredAt}
+ * yalnızca uygulama içi izleme içindir.
  *
- * @param actor işlemi yapan personel; kimliği doğrulanamamış başarısız girişlerde {@code null}
- * @param resourceId ilgili kaydın kimliği; bilinmiyorsa {@code null}
+ * @param actor işlemi yapan personel (hesap ve oturum veritabanı bağlamına aktarılır)
+ * @param resourceId ilgili kaydın kimliği
  */
 public record AuditEvent(
     UUID id,
@@ -22,16 +23,16 @@ public record AuditEvent(
     AuditAction action,
     AuthenticatedStaff actor,
     AuditResourceType resourceType,
-    String resourceId,
-    List<FieldChange> changes,
+    UUID resourceId,
     Map<String, String> details) {
 
     public AuditEvent {
         Objects.requireNonNull(id, "id");
         Objects.requireNonNull(occurredAt, "occurredAt");
         Objects.requireNonNull(action, "action");
+        Objects.requireNonNull(actor, "actor");
         Objects.requireNonNull(resourceType, "resourceType");
-        changes = List.copyOf(changes);
+        Objects.requireNonNull(resourceId, "resourceId");
         details = Map.copyOf(details);
     }
 }

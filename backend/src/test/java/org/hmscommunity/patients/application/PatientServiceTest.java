@@ -19,8 +19,6 @@ import org.hmscommunity.common.web.RequestValidationException;
 import org.hmscommunity.patients.domain.Patient;
 import org.hmscommunity.security.AuthenticatedStaff;
 import org.hmscommunity.security.StaffRole;
-import org.hmscommunity.security.audit.AuditAction;
-import org.hmscommunity.security.audit.AuditResourceType;
 import org.hmscommunity.security.audit.AuditService;
 import org.hmscommunity.testsupport.InMemoryPatientRepository;
 import org.hmscommunity.testsupport.RecordingAuditEventStore;
@@ -32,7 +30,7 @@ class PatientServiceTest {
 
     private static final ValidatorFactory FACTORY = Validation.buildDefaultValidatorFactory();
     private static final AuthenticatedStaff RECEPTIONIST =
-        new AuthenticatedStaff(UUID.randomUUID(), "test.receptionist", StaffRole.RECEPTIONIST);
+        new AuthenticatedStaff(UUID.randomUUID(), "test.receptionist", StaffRole.RECEPTIONIST, UUID.randomUUID());
 
     private final InMemoryPatientRepository repository = new InMemoryPatientRepository();
     private final RecordingAuditEventStore auditStore = new RecordingAuditEventStore();
@@ -46,32 +44,42 @@ class PatientServiceTest {
 
     // --- US-06 (#179): kayıt ---
 
+    /**
+     * Oluşturma denetim kaydı veritabanı tetikleyicisinde yazılır (PostgresPatientPersistenceTest); servis ayrıca
+     * kayıt üretmez, böylece aynı olay iki kez kaydedilmez.
+     */
     @Test
-    void validPatientIsRegisteredOnceAndAudited() {
+    void validPatientIsRegisteredOnceWithoutAJavaSideDuplicateAuditEvent() {
         Patient patient = service.register(SyntheticPatients.NATIONAL_ID, SyntheticPatients.advancedDetails(), RECEPTIONIST);
 
         assertThat(patient.id()).isNotNull();
         assertThat(patient.nationalId()).isEqualTo(SyntheticPatients.NATIONAL_ID);
         assertThat(patient.relativeInformation()).isEqualTo(SyntheticPatients.relative());
         assertThat(repository.count()).isEqualTo(1);
-        assertThat(auditStore.events()).singleElement().satisfies(event -> {
-            assertThat(event.action()).isEqualTo(AuditAction.CREATE);
-            assertThat(event.resourceType()).isEqualTo(AuditResourceType.PATIENT);
-            assertThat(event.resourceId()).isEqualTo(patient.id().toString());
-            assertThat(event.actor()).isEqualTo(RECEPTIONIST);
-            assertThat(event.changes()).isEmpty();
-        });
+        assertThat(auditStore.events()).isEmpty();
     }
 
     @Test
-    void duplicateNationalIdIsRejectedAndNotAudited() {
+    void duplicateNationalIdIsRejected() {
         service.register(SyntheticPatients.NATIONAL_ID, SyntheticPatients.mildDetails(), RECEPTIONIST);
-        auditStore.clear();
 
         assertThatThrownBy(() -> service.register(SyntheticPatients.NATIONAL_ID, SyntheticPatients.advancedDetails(), RECEPTIONIST))
             .isInstanceOf(DuplicateNationalIdException.class);
         assertThat(repository.count()).isEqualTo(1);
-        assertThat(auditStore.events()).isEmpty();
+    }
+
+    @Test
+    void dateOfBirthBeforeTheDatabaseMinimumIsRejected() {
+        var mild = SyntheticPatients.mildDetails();
+        var tooOld = new org.hmscommunity.patients.domain.PatientDetails(mild.firstName(), mild.lastName(),
+            java.time.LocalDate.of(1899, 12, 31), mild.gender(), mild.phone(), mild.address(), mild.conditionLevel(),
+            null);
+
+        assertThatThrownBy(() -> service.register(SyntheticPatients.NATIONAL_ID, tooOld, RECEPTIONIST))
+            .isInstanceOfSatisfying(RequestValidationException.class, ex ->
+                assertThat(ex.violations()).extracting(FieldViolation::field, FieldViolation::code)
+                    .containsExactly(org.assertj.core.groups.Tuple.tuple("dateOfBirth", "Min")));
+        assertThat(repository.count()).isZero();
     }
 
     @Test
@@ -116,6 +124,5 @@ class PatientServiceTest {
 
         assertThat(successes).isEqualTo(1);
         assertThat(repository.count()).isEqualTo(1);
-        assertThat(auditStore.events(AuditAction.CREATE)).hasSize(1);
     }
 }
