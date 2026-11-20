@@ -21,9 +21,13 @@ class HealthControllerTest {
             .andExpect(jsonPath("$.service").value("hms-community"));
     }
 
+    // US-01 ile kimlik doğrulama devreye girdiğinden anonim istekler artık 403 yerine,
+    // sözleşmede tanımlı olan 401 (Unauthorized) ile reddedilir.
     @Test
     void unknownRoutesAreNotPubliclyExposed() throws Exception {
         mvc.perform(get("/api/v1/patients"))
-            .andExpect(status().isForbidden());
+            .andExpect(status().isUnauthorized());
+        mvc.perform(get("/api/v1/not-a-route"))
+            .andExpect(status().isUnauthorized());
     }
 }

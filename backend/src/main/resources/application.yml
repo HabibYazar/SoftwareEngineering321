@@ -1,6 +1,19 @@
 spring:
   application:
     name: hms-community
+  autoconfigure:
+    # Spring Boot'un rastgele parolalı bellek içi varsayılan kullanıcısı kapatılır:
+    # kullanılmaz ve üretilen parolayı başlangıçta loga yazar.
+    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+  web:
+    # Doğrulama mesajları sunucu yerel ayarından bağımsız ve öngörülebilir olsun diye sabit İngilizce;
+    # kullanıcıya gösterilecek metinler ön yüzde hata kodlarından üretilir.
+    locale: en
+    locale-resolver: fixed
 server:
   port: 8080
   shutdown: graceful
+hms:
+  security:
+    # Erişim tokenının mutlak geçerlilik süresi (ISO-8601). Varsayılan: bir vardiya (8 saat).
+    access-token-ttl: PT8H
