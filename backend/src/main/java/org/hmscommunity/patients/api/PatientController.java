@@ -11,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -52,5 +53,12 @@ public class PatientController {
     @GetMapping("/{patientId}")
     public Patient get(@PathVariable UUID patientId, @AuthenticationPrincipal AuthenticatedStaff actor) {
         return patientService.get(patientId, actor);
+    }
+
+    /** US-08 (#197): ulusal kimlik numarası dışındaki tüm alanların güncellenmesi. */
+    @PutMapping("/{patientId}")
+    public Patient update(@PathVariable UUID patientId, @RequestBody PatientRequest request,
+            @AuthenticationPrincipal AuthenticatedStaff actor) {
+        return patientService.update(patientId, request.normalizedNationalId(), request.toDetails(), actor);
     }
 }

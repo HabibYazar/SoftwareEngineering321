@@ -91,4 +91,31 @@ public class PatientService {
         audit.patientRecordViewed(actor, patient.id(), AccessChannel.RECORD);
         return patient;
     }
+
+    /**
+     * US-08 (#197): ulusal kimlik numarası dışındaki tüm alanların güncellenmesi (tam değiştirme).
+     *
+     * <p>US-06 doğrulama kuralları aynen uygulanır; seviye "Advanced" yapılırsa yakın bilgisi zorunludur.
+     * İstekte ulusal kimlik numarası gönderilirse mevcut değerle aynı olmalıdır, farklıysa reddedilir.
+     * Başarılı güncelleme, gizlilik filtresinden geçmiş önceki/sonraki değerlerle denetlenir (US-03).
+     *
+     * <p>TODO(#177/#140): Kalıcı adaptörler eklendiğinde güncelleme ve denetim kaydı tek bir veritabanı
+     * işleminde (ör. {@code @Transactional}) çalıştırılmalıdır; şu an sınıf yolunda işlem yöneticisi yoktur.
+     */
+    public Patient update(UUID patientId, String requestedNationalId, PatientDetails details,
+            AuthenticatedStaff actor) {
+        Patient current = patients.findById(patientId).orElseThrow(PatientNotFoundException::new);
+        List<FieldViolation> violations = new ArrayList<>();
+        if (requestedNationalId != null && !requestedNationalId.equals(current.nationalId())) {
+            violations.add(new FieldViolation("nationalId", "Immutable", "cannot be changed"));
+        }
+        violations.addAll(validator.validateDetails(details));
+        if (!violations.isEmpty()) {
+            throw new RequestValidationException(violations);
+        }
+        Patient saved = patients.update(current.withDetails(details));
+        audit.updated(actor, AuditResourceType.PATIENT, saved.id().toString(),
+            PatientChangeTracking.changes(current, saved));
+        return saved;
+    }
 }

@@ -7,8 +7,9 @@ info:
     Week 8 MVP: login, roles/audit foundations, patient registration/search,
     clinician directory, appointments, outpatient examination and EMR.
     Week 10 final: laboratory requests, results and physician review.
-    Implemented in the backend: GET /health, POST /auth/login and
-    POST /auth/logout. Operations whose persistence integration is still
+    Implemented in the backend: GET /health, POST /auth/login, POST /auth/logout,
+    POST /patients, GET /patients, GET /patients/{patientId} and
+    PUT /patients/{patientId}. Operations whose persistence integration is still
     pending respond 503 (code INTEGRATION_PENDING) instead of fabricating data.
     All other operations remain planned. Synthetic test data only; not for clinical use.
     Staff roles: Administrator, Receptionist, Physician, Nurse,
@@ -150,6 +151,35 @@ paths:
       responses:
         '200':
           description: Patient record
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Patient' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+    put:
+      tags: [Patients]
+      operationId: updatePatient
+      summary: Update patient information (US-08, implemented; persistence pending #177/#196)
+      description: |
+        Receptionist only. Full replacement of every field except the national ID;
+        US-06 validation rules apply (including the ADVANCED relative requirement).
+        Omitting relativeInformation removes it, which is only allowed for MILD/MODERATE.
+        A nationalId that differs from the stored value returns 400 (field nationalId,
+        code Immutable). A successful update is recorded as an audit UPDATE event with
+        privacy-filtered before/after values of the changed fields.
+      parameters:
+        - $ref: '#/components/parameters/patientId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PatientUpdate' }
+      responses:
+        '200':
+          description: Updated patient record
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Patient' }
@@ -522,6 +552,29 @@ components:
         firstName: { type: string, minLength: 1, maxLength: 100 }
         lastName: { type: string, minLength: 1, maxLength: 100 }
         nationalId: { type: string, pattern: '^[0-9]{11}$', description: Synthetic test ID only }
+        dateOfBirth: { type: string, format: date, description: Must not be in the future }
+        gender: { type: string, minLength: 1, maxLength: 40 }
+        phone: { $ref: '#/components/schemas/PhoneNumber' }
+        address: { type: string, minLength: 1, maxLength: 500 }
+        conditionLevel: { type: string, enum: [MILD, MODERATE, ADVANCED] }
+        relativeInformation: { $ref: '#/components/schemas/RelativeInformation' }
+      allOf:
+        - if:
+            properties:
+              conditionLevel: { const: ADVANCED }
+            required: [conditionLevel]
+          then:
+            required: [relativeInformation]
+    PatientUpdate:
+      type: object
+      description: |
+        US-08: same fields and validation as NewPatient, but nationalId is optional
+        and, if present, must equal the stored value (it can never be changed).
+      required: [firstName, lastName, dateOfBirth, gender, phone, address, conditionLevel]
+      properties:
+        firstName: { type: string, minLength: 1, maxLength: 100 }
+        lastName: { type: string, minLength: 1, maxLength: 100 }
+        nationalId: { type: string, pattern: '^[0-9]{11}$', description: Optional; must match the stored value }
         dateOfBirth: { type: string, format: date, description: Must not be in the future }
         gender: { type: string, minLength: 1, maxLength: 40 }
         phone: { $ref: '#/components/schemas/PhoneNumber' }

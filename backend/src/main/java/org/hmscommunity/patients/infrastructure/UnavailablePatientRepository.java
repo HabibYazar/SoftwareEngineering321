@@ -39,4 +39,9 @@ class UnavailablePatientRepository implements PatientRepository {
     public List<Patient> searchByName(String nameFragment) {
         throw new IntegrationPendingException(INTEGRATION);
     }
+
+    @Override
+    public Patient update(Patient patient) {
+        throw new IntegrationPendingException(INTEGRATION);
+    }
 }

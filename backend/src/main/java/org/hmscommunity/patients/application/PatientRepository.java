@@ -38,4 +38,11 @@ public interface PatientRepository {
      * @param nameFragment servis tarafından kırpılmış, iç boşlukları teke indirilmiş ve boş olmayan değer
      */
     List<Patient> searchByName(String nameFragment);
+
+    /**
+     * US-08: aynı kimlikteki hastanın ulusal kimlik numarası DIŞINDAKİ tüm alanlarını günceller.
+     * Uygulama {@code national_id} sütununu asla güncellememelidir (#196); kayıt artık yoksa
+     * {@link PatientNotFoundException} fırlatılır.
+     */
+    Patient update(Patient patient);
 }

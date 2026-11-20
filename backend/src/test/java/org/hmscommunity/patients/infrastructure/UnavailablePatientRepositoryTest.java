@@ -22,5 +22,6 @@ class UnavailablePatientRepositoryTest {
         assertThatThrownBy(() -> repository.findByNationalId(SyntheticPatients.NATIONAL_ID))
             .isInstanceOf(IntegrationPendingException.class);
         assertThatThrownBy(() -> repository.searchByName("Deneme")).isInstanceOf(IntegrationPendingException.class);
+        assertThatThrownBy(() -> repository.update(patient)).isInstanceOf(IntegrationPendingException.class);
     }
 }
