@@ -1,14 +1,19 @@
 package org.hmscommunity.patients.api;
 
 import java.net.URI;
+import java.util.List;
+import java.util.UUID;
 import org.hmscommunity.patients.application.PatientService;
 import org.hmscommunity.patients.domain.Patient;
 import org.hmscommunity.security.AuthenticatedStaff;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -34,5 +39,18 @@ public class PatientController {
         URI location = ServletUriComponentsBuilder.fromCurrentRequestUri()
             .path("/{id}").buildAndExpand(patient.id()).toUri();
         return ResponseEntity.created(location).body(patient);
+    }
+
+    /** US-07 (#187): {@code ?nationalId=} birebir veya {@code ?name=} kısmi arama; eşleşme yoksa {@code []}. */
+    @GetMapping
+    public List<Patient> search(@RequestParam(required = false) String name,
+            @RequestParam(required = false) String nationalId,
+            @AuthenticationPrincipal AuthenticatedStaff actor) {
+        return patientService.search(name, nationalId, actor);
+    }
+
+    @GetMapping("/{patientId}")
+    public Patient get(@PathVariable UUID patientId, @AuthenticationPrincipal AuthenticatedStaff actor) {
+        return patientService.get(patientId, actor);
     }
 }

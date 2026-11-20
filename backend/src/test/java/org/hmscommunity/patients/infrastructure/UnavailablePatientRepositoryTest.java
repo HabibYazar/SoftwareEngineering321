@@ -18,7 +18,9 @@ class UnavailablePatientRepositoryTest {
         Patient patient = Patient.create(UUID.randomUUID(), SyntheticPatients.NATIONAL_ID, SyntheticPatients.mildDetails());
 
         assertThatThrownBy(() -> repository.insert(patient)).isInstanceOf(IntegrationPendingException.class);
+        assertThatThrownBy(() -> repository.findById(patient.id())).isInstanceOf(IntegrationPendingException.class);
         assertThatThrownBy(() -> repository.findByNationalId(SyntheticPatients.NATIONAL_ID))
             .isInstanceOf(IntegrationPendingException.class);
+        assertThatThrownBy(() -> repository.searchByName("Deneme")).isInstanceOf(IntegrationPendingException.class);
     }
 }
