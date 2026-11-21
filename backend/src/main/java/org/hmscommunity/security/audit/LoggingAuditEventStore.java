@@ -6,11 +6,12 @@ import org.springframework.context.annotation.Fallback;
 import org.springframework.stereotype.Component;
 
 /**
- * #140 kalıcı denetim deposu sağlanana kadar kullanılan GEÇİCİ uygulama.
+ * Veritabanı yapılandırılmadığında ({@code HMS_DB_URL} yok) kullanılan geçici uygulama.
  *
- * <p>Olayları ayrılmış {@code hms.audit} logger'ına yazar. Gizlilik gereği alanların önceki/sonraki
- * DEĞERLERİ loglanmaz; yalnızca değişen alan adları yazılır. Bu uygulama kalıcılık ve değiştirilemezlik
- * gereksinimlerini karşılamaz; yalnızca olay üretiminin izlenebilir olmasını sağlar.
+ * <p>Olayları ayrılmış {@code hms.audit} logger'ına yazar; ayrıntı değerleri değil yalnızca anahtarları
+ * loglanır. Kalıcılık ve değiştirilemezlik gereksinimlerini karşılamaz. Pratikte devreye girmez: veritabanı
+ * olmadan giriş yapılamadığı için görüntülenecek kayıt da yoktur. {@code JdbcAuditEventStore} etkin
+ * olduğunda {@link Fallback} sayesinde kullanılmaz.
  */
 @Component
 @Fallback
@@ -21,11 +22,8 @@ class LoggingAuditEventStore implements AuditEventStore {
     @Override
     public void append(AuditEvent event) {
         AUDIT_LOG.info("audit id={} at={} action={} resourceType={} resourceId={} actorId={} actorRole={} "
-                + "changedFields={} details={}",
+                + "detailKeys={}",
             event.id(), event.occurredAt(), event.action(), event.resourceType(), event.resourceId(),
-            event.actor() != null ? event.actor().staffId() : null,
-            event.actor() != null ? event.actor().role() : null,
-            event.changes().stream().map(FieldChange::field).toList(),
-            event.details());
+            event.actor().accountId(), event.actor().role(), event.details().keySet().stream().sorted().toList());
     }
 }

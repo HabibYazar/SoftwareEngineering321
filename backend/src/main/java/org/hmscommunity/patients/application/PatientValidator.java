@@ -2,6 +2,7 @@ package org.hmscommunity.patients.application;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -19,6 +20,8 @@ public class PatientValidator {
 
     /** Sentetik ulusal kimlik numarası: tam olarak 11 rakam. */
     private static final Pattern NATIONAL_ID = Pattern.compile("^[0-9]{11}$");
+    /** Veritabanının kabul ettiği en erken doğum tarihi (V3 migration'ı). */
+    static final LocalDate EARLIEST_DATE_OF_BIRTH = LocalDate.of(1900, 1, 1);
 
     private final Validator validator;
 
@@ -45,6 +48,10 @@ public class PatientValidator {
             .map(PatientValidator::toFieldViolation)
             .sorted(Comparator.comparing(FieldViolation::field).thenComparing(FieldViolation::code))
             .toList());
+        // Veritabanı kuralı (field_rules / ck_patients_date_of_birth_min): doğum tarihi 1900-01-01'den önce olamaz.
+        if (details.dateOfBirth() != null && details.dateOfBirth().isBefore(EARLIEST_DATE_OF_BIRTH)) {
+            violations.add(new FieldViolation("dateOfBirth", "Min", "must not be before " + EARLIEST_DATE_OF_BIRTH));
+        }
         // US-06: "Advanced" seviyesindeki hastalar için yakın bilgisi zorunludur (kayıt ve güncellemede).
         if (details.conditionLevel() != null && details.conditionLevel().requiresRelativeInformation()
                 && details.relativeInformation() == null) {

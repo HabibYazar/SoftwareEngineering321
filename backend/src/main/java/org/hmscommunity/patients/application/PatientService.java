@@ -9,16 +9,22 @@ import org.hmscommunity.common.web.RequestValidationException;
 import org.hmscommunity.patients.domain.Patient;
 import org.hmscommunity.patients.domain.PatientDetails;
 import org.hmscommunity.security.AuthenticatedStaff;
-import org.hmscommunity.security.audit.AuditResourceType;
 import org.hmscommunity.security.audit.AuditService;
 import org.hmscommunity.security.audit.AuditService.AccessChannel;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Hasta yönetimi iş kuralları.
- * Yetkilendirme (US-02) güvenlik filtre zincirinde, denetim (US-03) bu serviste uygulanır.
+ * Hasta yönetimi iş kuralları. Yetkilendirme (US-02) güvenlik filtre zincirinde ve veritabanında,
+ * doğrulama burada uygulanır.
+ *
+ * <p>Denetim (US-03): oluşturma ve güncelleme kayıtları (önceki/sonraki değerlerle) veritabanı
+ * tetikleyicileri tarafından, görüntüleme kayıtları bu serviste üretilir. Her metot tek bir veritabanı
+ * işleminde (transaction) çalışır; iş verisi ile ona ait denetim kaydı birlikte kalıcı olur ya da
+ * birlikte geri alınır.
  */
 @Service
+@Transactional
 public class PatientService {
 
     /** OpenAPI {@code searchPatients.name} için üst sınır. */
@@ -37,7 +43,7 @@ public class PatientService {
 
     /**
      * US-06 (#179): yeni hasta kaydı. Ulusal kimlik numarası benzersiz olmalıdır; benzersizlik hem
-     * burada hem de (eşzamanlı istekler için) kalıcılık katmanındaki UNIQUE kısıtı ile korunur.
+     * burada hem de (eşzamanlı istekler için) veritabanındaki UNIQUE kısıtı ile korunur.
      */
     public Patient register(String nationalId, PatientDetails details, AuthenticatedStaff actor) {
         List<FieldViolation> violations = new ArrayList<>(validator.validateNationalId(nationalId));
@@ -48,9 +54,7 @@ public class PatientService {
         if (patients.findByNationalId(nationalId).isPresent()) {
             throw new DuplicateNationalIdException();
         }
-        Patient registered = patients.insert(Patient.create(UUID.randomUUID(), nationalId, details));
-        audit.created(actor, AuditResourceType.PATIENT, registered.id().toString());
-        return registered;
+        return patients.insert(Patient.create(UUID.randomUUID(), nationalId, details), actor);
     }
 
     /**
@@ -97,10 +101,8 @@ public class PatientService {
      *
      * <p>US-06 doğrulama kuralları aynen uygulanır; seviye "Advanced" yapılırsa yakın bilgisi zorunludur.
      * İstekte ulusal kimlik numarası gönderilirse mevcut değerle aynı olmalıdır, farklıysa reddedilir.
-     * Başarılı güncelleme, gizlilik filtresinden geçmiş önceki/sonraki değerlerle denetlenir (US-03).
-     *
-     * <p>TODO(#177/#140): Kalıcı adaptörler eklendiğinde güncelleme ve denetim kaydı tek bir veritabanı
-     * işleminde (ör. {@code @Transactional}) çalıştırılmalıdır; şu an sınıf yolunda işlem yöneticisi yoktur.
+     * Bu kural Administrator için de geçerlidir: veritabanı yöneticinin ulusal kimlik numarasını
+     * düzeltmesine izin verse de US-08 numaranın güncellenemeyeceğini söyler.
      */
     public Patient update(UUID patientId, String requestedNationalId, PatientDetails details,
             AuthenticatedStaff actor) {
@@ -113,9 +115,6 @@ public class PatientService {
         if (!violations.isEmpty()) {
             throw new RequestValidationException(violations);
         }
-        Patient saved = patients.update(current.withDetails(details));
-        audit.updated(actor, AuditResourceType.PATIENT, saved.id().toString(),
-            PatientChangeTracking.changes(current, saved));
-        return saved;
+        return patients.update(current.withDetails(details), actor);
     }
 }

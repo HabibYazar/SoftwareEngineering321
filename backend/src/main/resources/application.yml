@@ -2,9 +2,23 @@ spring:
   application:
     name: hms-community
   autoconfigure:
-    # Spring Boot'un rastgele parolalı bellek içi varsayılan kullanıcısı kapatılır:
-    # kullanılmaz ve üretilen parolayı başlangıçta loga yazar.
-    exclude: org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+    exclude:
+      # Spring Boot'un rastgele parolalı bellek içi varsayılan kullanıcısı kapatılır:
+      # kullanılmaz ve üretilen parolayı başlangıçta loga yazar.
+      - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+      # Veri kaynağı yalnızca HMS_DB_URL verildiğinde DatabaseConfiguration tarafından kurulur;
+      # adres yoksa uygulama veritabanısız ve fail-closed (HTTP 503) çalışır.
+      - org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+  datasource:
+    # Bağlantı bilgileri yalnızca ortam değişkenlerinden okunur; depoda parola tutulmaz.
+    url: ${HMS_DB_URL:}
+    username: ${HMS_DB_USER:}
+    password: ${HMS_DB_PASSWORD:}
+  flyway:
+    # Migration'lar (Data iş akışına ait V1..V3) başlangıçta uygulanır. Üretimde çalışma zamanı kullanıcısı
+    # yalnızca hms_app rolünün üyesi olabilir; şemayı kuran kullanıcı ayrı verilebilir.
+    user: ${HMS_DB_MIGRATION_USER:${HMS_DB_USER:}}
+    password: ${HMS_DB_MIGRATION_PASSWORD:${HMS_DB_PASSWORD:}}
   web:
     # Doğrulama mesajları sunucu yerel ayarından bağımsız ve öngörülebilir olsun diye sabit İngilizce;
     # kullanıcıya gösterilecek metinler ön yüzde hata kodlarından üretilir.

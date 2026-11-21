@@ -14,8 +14,6 @@ import org.hmscommunity.patients.application.PatientService;
 import org.hmscommunity.patients.domain.Patient;
 import org.hmscommunity.security.AuthenticatedStaff;
 import org.hmscommunity.security.StaffRole;
-import org.hmscommunity.security.audit.AuditAction;
-import org.hmscommunity.security.audit.FieldChange;
 import org.hmscommunity.testsupport.InMemoryPatientRepository;
 import org.hmscommunity.testsupport.RecordingAuditEventStore;
 import org.hmscommunity.testsupport.SyntheticPatients;
@@ -38,7 +36,7 @@ import org.springframework.test.web.servlet.ResultActions;
 class PatientUpdateIntegrationTest {
 
     private static final AuthenticatedStaff SEEDER =
-        new AuthenticatedStaff(UUID.randomUUID(), "test.seeder", StaffRole.RECEPTIONIST);
+        new AuthenticatedStaff(UUID.randomUUID(), "test.seeder", StaffRole.RECEPTIONIST, UUID.randomUUID());
 
     @Autowired MockMvc mvc;
     @Autowired InMemoryPatientRepository patients;
@@ -57,7 +55,7 @@ class PatientUpdateIntegrationTest {
     }
 
     @Test
-    void permittedFieldsAreUpdatedAndAudited() throws Exception {
+    void permittedFieldsAreUpdated() throws Exception {
         Map<String, Object> body = updateBody();
         body.put("address", "Güncel Sentetik Adres No:9, Bursa");
 
@@ -67,11 +65,8 @@ class PatientUpdateIntegrationTest {
             .andExpect(jsonPath("$.address").value("Güncel Sentetik Adres No:9, Bursa"))
             .andExpect(jsonPath("$.nationalId").value(SyntheticPatients.NATIONAL_ID));
 
-        assertThat(auditStore.events(AuditAction.UPDATE)).singleElement().satisfies(event -> {
-            assertThat(event.actor().role()).isEqualTo(StaffRole.RECEPTIONIST);
-            assertThat(event.changes()).containsExactly(new FieldChange("address",
-                "Sentetik Mah. Test Sok. No:1, Ankara", "Güncel Sentetik Adres No:9, Bursa"));
-        });
+        // Önceki/sonraki değerli güncelleme kaydını veritabanı tetikleyicisi yazar (PostgresPatientPersistenceTest).
+        assertThat(auditStore.events()).isEmpty();
     }
 
     @Test
@@ -85,7 +80,6 @@ class PatientUpdateIntegrationTest {
             .andExpect(jsonPath("$.errors[0].code").value("Immutable"));
 
         assertThat(patients.findById(mild.id())).contains(mild);
-        assertThat(auditStore.events(AuditAction.UPDATE)).isEmpty();
     }
 
     @Test
@@ -140,15 +134,35 @@ class PatientUpdateIntegrationTest {
 
     @Test
     void unauthorizedRoleCannotUpdate() throws Exception {
-        String adminToken = loginAs(mvc, StaffRole.ADMINISTRATOR);
+        String nurseToken = loginAs(mvc, StaffRole.NURSE);
 
         mvc.perform(put("/api/v1/patients/" + mild.id())
-                .header(HttpHeaders.AUTHORIZATION, bearer(adminToken))
+                .header(HttpHeaders.AUTHORIZATION, bearer(nurseToken))
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json(updateBody())))
             .andExpect(status().isForbidden());
         assertThat(patients.findById(mild.id())).contains(mild);
-        assertThat(auditStore.events(AuditAction.UPDATE)).isEmpty();
+    }
+
+    /** Veritabanı matrisi: Administrator her izne sahiptir; ulusal kimlik kuralı ona da uygulanır (US-08). */
+    @Test
+    void administratorMayUpdateButNotChangeTheNationalId() throws Exception {
+        String adminToken = loginAs(mvc, StaffRole.ADMINISTRATOR);
+        Map<String, Object> body = updateBody();
+        body.put("nationalId", SyntheticPatients.OTHER_NATIONAL_ID);
+
+        mvc.perform(put("/api/v1/patients/" + mild.id())
+                .header(HttpHeaders.AUTHORIZATION, bearer(adminToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(body)))
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.errors[0].code").value("Immutable"));
+        mvc.perform(put("/api/v1/patients/" + mild.id())
+                .header(HttpHeaders.AUTHORIZATION, bearer(adminToken))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json(updateBody())))
+            .andExpect(status().isOk());
+        assertThat(patients.findById(mild.id()).orElseThrow().nationalId()).isEqualTo(SyntheticPatients.NATIONAL_ID);
     }
 
     @Test

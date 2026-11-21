@@ -7,11 +7,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Locale;
 import org.hmscommunity.security.StaffRole;
-import org.hmscommunity.security.audit.AuditAction;
-import org.hmscommunity.security.audit.AuditEvent;
-import org.hmscommunity.security.audit.AuditService;
 import org.hmscommunity.testsupport.InMemoryStaffAccountDirectory;
-import org.hmscommunity.testsupport.RecordingAuditEventStore;
+import org.hmscommunity.testsupport.InMemoryStaffSessionStore;
+import org.hmscommunity.testsupport.InMemoryStaffSessionStore.FailedLogin;
 import org.hmscommunity.testsupport.SyntheticStaff;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -19,18 +17,19 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 class AuthenticationServiceTest {
 
     private final InMemoryStaffAccountDirectory directory = new InMemoryStaffAccountDirectory();
-    private final AccessTokenService tokens = new AccessTokenService(Clock.systemUTC(), Duration.ofHours(1));
-    private final RecordingAuditEventStore auditStore = new RecordingAuditEventStore();
-    private final AuthenticationService service = new AuthenticationService(
-        directory, new BCryptPasswordEncoder(4), tokens, new AuditService(auditStore, Clock.systemUTC()));
+    private final InMemoryStaffSessionStore sessions = new InMemoryStaffSessionStore(Clock.systemUTC());
+    private final AccessTokenService tokens = new AccessTokenService(sessions, Clock.systemUTC(), Duration.ofHours(1));
+    private final AuthenticationService service =
+        new AuthenticationService(directory, new BCryptPasswordEncoder(4), tokens, sessions);
 
     @Test
     void validCredentialsIssueTokenWithStaffRole() {
         IssuedAccessToken token = service.login(SyntheticStaff.username(StaffRole.NURSE), SyntheticStaff.PASSWORD);
 
         assertThat(token.staff().role()).isEqualTo(StaffRole.NURSE);
-        assertThat(token.staff().staffId()).isEqualTo(directory.get(StaffRole.NURSE).id());
+        assertThat(token.staff().accountId()).isEqualTo(directory.get(StaffRole.NURSE).id());
         assertThat(tokens.resolve(token.value())).isPresent();
+        assertThat(sessions.failedLogins()).isEmpty();
     }
 
     @Test
@@ -39,7 +38,7 @@ class AuthenticationServiceTest {
 
         assertThatThrownBy(() -> service.login(username, "wrong-password"))
             .isInstanceOf(InvalidCredentialsException.class);
-        assertThat(tokens.activeSessionCount()).isZero();
+        assertThat(sessions.activeSessionCount()).isZero();
     }
 
     @Test
@@ -47,14 +46,34 @@ class AuthenticationServiceTest {
         assertThatThrownBy(() -> service.login("nobody", SyntheticStaff.PASSWORD))
             .isInstanceOf(InvalidCredentialsException.class)
             .hasMessage("Invalid username or password.");
-        assertThat(tokens.activeSessionCount()).isZero();
+        assertThat(sessions.activeSessionCount()).isZero();
     }
 
     @Test
-    void usernameMatchIsExact() {
-        String username = SyntheticStaff.username(StaffRole.NURSE).toUpperCase(Locale.ROOT);
+    void deactivatedAccountGetsTheSameGenericErrorEvenWithTheRightPassword() {
+        sessions.deactivate(directory.get(StaffRole.NURSE).id());
 
-        assertThatThrownBy(() -> service.login(username, SyntheticStaff.PASSWORD))
+        assertThatThrownBy(() -> service.login(SyntheticStaff.username(StaffRole.NURSE), SyntheticStaff.PASSWORD))
+            .isInstanceOf(InvalidCredentialsException.class)
+            .hasMessage("Invalid username or password.");
+        assertThat(sessions.activeSessionCount()).isZero();
+    }
+
+    /** Veritabanı kullanıcı adlarını küçük harfle saklar ve {@code lower(username)} ile eşleştirir. */
+    @Test
+    void usernameMatchIsCaseInsensitiveAndIgnoresSurroundingWhitespace() {
+        String username = "  " + SyntheticStaff.username(StaffRole.NURSE).toUpperCase(Locale.ROOT) + " ";
+
+        IssuedAccessToken token = service.login(username, SyntheticStaff.PASSWORD);
+
+        assertThat(token.staff().username()).isEqualTo(SyntheticStaff.username(StaffRole.NURSE));
+    }
+
+    @Test
+    void passwordMatchStaysCaseSensitive() {
+        String username = SyntheticStaff.username(StaffRole.NURSE);
+
+        assertThatThrownBy(() -> service.login(username, SyntheticStaff.PASSWORD.toUpperCase(Locale.ROOT)))
             .isInstanceOf(InvalidCredentialsException.class);
     }
 
@@ -68,57 +87,31 @@ class AuthenticationServiceTest {
         assertThat(tokens.resolve(token.value())).isEmpty();
     }
 
-    // --- US-03 (#145): giriş/çıkış denetim olayları ---
+    // --- US-03: başarısız giriş kaydına hangi bilginin gittiği (kayıt veritabanı fonksiyonunda yazılır) ---
 
     @Test
-    void successfulLoginIsAudited() {
-        IssuedAccessToken token = service.login(SyntheticStaff.username(StaffRole.NURSE), SyntheticStaff.PASSWORD);
-
-        AuditEvent event = auditStore.events(AuditAction.LOGIN_SUCCEEDED).getFirst();
-        assertThat(event.actor()).isEqualTo(token.staff());
-        assertThat(event.resourceId()).isEqualTo(token.staff().staffId().toString());
-        assertThat(event.toString()).doesNotContain(token.value()).doesNotContain(SyntheticStaff.PASSWORD);
-    }
-
-    @Test
-    void failedLoginForExistingAccountRecordsAccountButNoActor() {
+    void failedLoginForExistingAccountPassesOnlyTheMatchedAccount() {
         String username = SyntheticStaff.username(StaffRole.NURSE);
 
         assertThatThrownBy(() -> service.login(username, "wrong-password"));
 
-        AuditEvent event = auditStore.events(AuditAction.LOGIN_FAILED).getFirst();
-        assertThat(event.actor()).isNull();
-        assertThat(event.resourceId()).isEqualTo(directory.get(StaffRole.NURSE).id().toString());
-        assertThat(event.details()).containsEntry("reason", "BAD_CREDENTIALS");
-        assertThat(event.toString()).doesNotContain("wrong-password");
+        assertThat(sessions.failedLogins()).containsExactly(
+            new FailedLogin(directory.get(StaffRole.NURSE), LoginFailureReason.BAD_CREDENTIALS));
     }
 
     @Test
-    void failedLoginForUnknownUserDoesNotStoreTheTypedUsername() {
+    void failedLoginForUnknownUserNeverPassesTheTypedText() {
         assertThatThrownBy(() -> service.login("maybe-a-mistyped-password", SyntheticStaff.PASSWORD));
 
-        AuditEvent event = auditStore.events(AuditAction.LOGIN_FAILED).getFirst();
-        assertThat(event.resourceId()).isNull();
-        assertThat(event.details()).containsEntry("reason", "UNKNOWN_ACCOUNT");
-        assertThat(event.toString()).doesNotContain("maybe-a-mistyped-password");
+        assertThat(sessions.failedLogins()).containsExactly(new FailedLogin(null, LoginFailureReason.UNKNOWN_ACCOUNT));
     }
 
     @Test
-    void logoutIsAudited() {
-        IssuedAccessToken token = service.login(SyntheticStaff.username(StaffRole.PHYSICIAN), SyntheticStaff.PASSWORD);
-
-        service.logout(new StaffAuthenticationToken(tokens.resolve(token.value()).orElseThrow()));
-
-        assertThat(auditStore.events(AuditAction.LOGOUT)).singleElement()
-            .satisfies(event -> assertThat(event.actor()).isEqualTo(token.staff()));
-    }
-
-    @Test
-    void loginIsRejectedAndTokenRevokedWhenAuditCannotBeWritten() {
-        auditStore.failWith(new IllegalStateException("audit store down"));
+    void noTokenIsIssuedWhenTheSessionStoreFails() {
+        sessions.failWith(new IllegalStateException("database down"));
 
         assertThatThrownBy(() -> service.login(SyntheticStaff.username(StaffRole.NURSE), SyntheticStaff.PASSWORD))
             .isInstanceOf(IllegalStateException.class);
-        assertThat(tokens.activeSessionCount()).isZero();
+        assertThat(sessions.activeSessionCount()).isZero();
     }
 }

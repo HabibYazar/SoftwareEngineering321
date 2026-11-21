@@ -5,9 +5,13 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.fasterxml.jackson.databind.exc.MismatchedInputException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import org.hmscommunity.common.persistence.PostgresErrors;
+import org.postgresql.util.ServerErrorMessage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.TypeMismatchException;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -42,6 +46,23 @@ public class ApiExceptionHandler extends ResponseEntityExceptionHandler {
             log.warn("Request failed with {} {}: {}", ex.status().value(), ex.code(), ex.getMessage());
         }
         return ResponseEntity.status(ex.status()).body(problem);
+    }
+
+    /**
+     * Veritabanının sözleşmeli SQLSTATE hataları (alan doğrulaması, benzersizlik, yetki) uygun HTTP yanıtına
+     * çevrilir. Backend doğrulaması veritabanı kurallarını kapsadığı için bu yola düşülmesi iki katmanın
+     * kurallarının ayrıştığına işaret eder; bu yüzden değer içermeyen bir uyarı loglanır.
+     */
+    @ExceptionHandler(DataAccessException.class)
+    ResponseEntity<ProblemDetail> handleDataAccess(DataAccessException ex) throws Exception {
+        Optional<ApiException> translated = PostgresErrors.translate(ex);
+        if (translated.isEmpty()) {
+            return handleUnexpected(ex);
+        }
+        log.warn("Database rejected the request: SQLSTATE {} -> HTTP {} {}",
+            PostgresErrors.serverError(ex).map(ServerErrorMessage::getSQLState).orElse("?"),
+            translated.get().status().value(), translated.get().code());
+        return handleApiException(translated.get());
     }
 
     @ExceptionHandler(Exception.class)

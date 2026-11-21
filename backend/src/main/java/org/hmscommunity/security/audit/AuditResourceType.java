@@ -1,14 +1,13 @@
 package org.hmscommunity.security.audit;
 
 /**
- * Denetim kaydının ilgili olduğu kayıt türü.
- * Yeni bir modül denetlenen bir işlem eklediğinde kendi kayıt türünü buraya eklemelidir.
+ * Denetim kaydının ilgili olduğu kayıt türü; değerler {@code audit_entity_types.code} ile aynıdır.
  */
 public enum AuditResourceType {
-    STAFF_ACCOUNT,
     PATIENT,
-    /** Elektronik tıbbi kayıt (muayene notu, öykü vb.; Sprint 3 modülleri). */
-    MEDICAL_RECORD,
-    /** Randevu; iptal (cancel) işlemleri için (US-12, Sprint 3). */
-    APPOINTMENT
+    /**
+     * Elektronik tıbbi kayıt (Sprint 3 modülleri). Veritabanında bu kayıt türü henüz tanımlı değildir;
+     * EMR migration'ı {@code audit_entity_types} tablosuna eklemeden yazılan olay {@code HL002} ile reddedilir.
+     */
+    MEDICAL_RECORD
 }

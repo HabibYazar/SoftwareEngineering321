@@ -1,5 +1,7 @@
 package org.hmscommunity.testsupport;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -10,8 +12,9 @@ import org.hmscommunity.security.authentication.StaffAccountDirectory;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 /**
- * #114 veri modeli hazır olana kadar backend davranışını doğrulamak için kullanılan test dublörü.
- * Parolalar üretim ile aynı biçimde BCrypt özeti olarak saklanır (testi hızlandırmak için düşük maliyetle).
+ * Veritabanısız testlerde personel hesaplarını taklit eden test dublörü.
+ * Parolalar üretim ile aynı biçimde BCrypt özeti olarak saklanır (testi hızlandırmak için düşük maliyetle);
+ * kullanıcı adı, veritabanındaki {@code lower(username)} kuralı gibi büyük/küçük harf duyarsız eşleşir.
  */
 public class InMemoryStaffAccountDirectory implements StaffAccountDirectory {
 
@@ -30,26 +33,30 @@ public class InMemoryStaffAccountDirectory implements StaffAccountDirectory {
         for (StaffRole role : StaffRole.values()) {
             String hash = SEEDED_HASHES.computeIfAbsent(role, r -> ENCODER.encode(SyntheticStaff.PASSWORD));
             String username = SyntheticStaff.username(role);
-            accounts.put(username, new StaffAccount(stableId(username), username, hash, role));
+            accounts.put(key(username), new StaffAccount(stableId(username), username, hash, role));
         }
     }
 
     public StaffAccount add(String username, String rawPassword, StaffRole role) {
         StaffAccount account = new StaffAccount(stableId(username), username, ENCODER.encode(rawPassword), role);
-        accounts.put(username, account);
+        accounts.put(key(username), account);
         return account;
     }
 
     public StaffAccount get(StaffRole role) {
-        return accounts.get(SyntheticStaff.username(role));
+        return accounts.get(key(SyntheticStaff.username(role)));
     }
 
     @Override
     public Optional<StaffAccount> findByUsername(String username) {
-        return Optional.ofNullable(accounts.get(username));
+        return Optional.ofNullable(accounts.get(key(username)));
+    }
+
+    private static String key(String username) {
+        return username.toLowerCase(Locale.ROOT);
     }
 
     private static UUID stableId(String username) {
-        return UUID.nameUUIDFromBytes(("staff:" + username).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        return UUID.nameUUIDFromBytes(("staff:" + username).getBytes(StandardCharsets.UTF_8));
     }
 }
