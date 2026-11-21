@@ -1,0 +1,5 @@
+/* Profil, kayıt formunun düzenini ve ortak temayı miras alır. */
+.profile-identity { margin: 0; }
+.profile-identity dd { margin: 0; font-weight: 700; }
+.profile-actions { display: grid; gap: var(--space-4); }
+.profile-buttons { display: flex; flex-wrap: wrap; gap: var(--space-2); }
