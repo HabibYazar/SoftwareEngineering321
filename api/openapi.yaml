@@ -32,6 +32,7 @@ tags:
   - name: Authentication
   - name: Patients
   - name: Staff
+  - name: Departments
   - name: Appointments
   - name: Outpatient
   - name: Records
@@ -199,7 +200,7 @@ paths:
     get:
       tags: [Staff]
       operationId: listClinicians
-      summary: List clinicians available in synthetic demo (planned)
+      summary: List clinicians available in the database.
       parameters:
         - in: query
           name: department
@@ -213,6 +214,21 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Clinician' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /departments:
+    get:
+      tags: [Staff, Departments]
+      operationId: listDepartments
+      summary: List departments available in the database.
+      responses:
+        '200':
+          description: Available departments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Department' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /appointments:
@@ -542,7 +558,7 @@ components:
     PhoneNumber:
       type: string
       minLength: 7
-      maxLength: 32
+      maxLength: 32https://adiyamaneah.saglik.gov.tr/TR-132003/enfeksiyon-hastaliklari.h…
       pattern: '^\+?[0-9][0-9 ()-]{5,29}[0-9]$'
       description: Optional leading +, digits with spaces, parentheses or hyphens; starts and ends with a digit
       example: '+90 (555) 000-00-00'
@@ -602,6 +618,12 @@ components:
           required: [id]
           properties:
             id: { type: string, format: uuid }
+    Department:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
     Clinician:
       type: object
       required: [id, displayName, department]
