@@ -218,7 +218,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
   /departments:
     get:
-      tags: [Staff, Departments]
+      tags: [Departments]
       operationId: listDepartments
       summary: List departments available in the database.
       responses:
@@ -620,10 +620,10 @@ components:
             id: { type: string, format: uuid }
     Department:
       type: object
-      required: [id, name]
+      required: [id, department]
       properties:
         id: { type: string, format: uuid }
-        name: { type: string }
+        department: { type: string }
     Clinician:
       type: object
       required: [id, displayName, department]
