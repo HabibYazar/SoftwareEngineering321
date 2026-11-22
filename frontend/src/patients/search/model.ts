@@ -17,7 +17,7 @@ export const patientNameLimit = 150
 export function validatePatientQuery(mode: SearchMode, input: string): { query: PatientQuery } | { error: string } {
   const value = input.trim()
   if (mode === 'nationalId' && !nationalIdPattern.test(value)) {
-    return { error: 'Enter a synthetic national ID with exactly 11 digits.' }
+    return { error: 'Enter a T.C. Kimlik No with exactly 11 digits.' }
   }
   if (mode === 'name' && !value) return { error: 'Enter a patient name or part of a name.' }
   if (mode === 'name' && value.length > patientNameLimit) return { error: 'Use 150 characters or fewer.' }

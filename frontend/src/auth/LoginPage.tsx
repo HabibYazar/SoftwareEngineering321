@@ -1,5 +1,5 @@
 import { useRef, useState, type FormEvent } from 'react'
-import { Alert, Button, Card, TextField } from '../components/ui'
+import { Alert, Button, Card, Icon, TextField } from '../components/ui'
 import { useAuth } from './AuthProvider'
 import { AuthError } from './types'
 import { mockEnabled } from './service'
@@ -37,8 +37,8 @@ export function LoginPage() {
   return <section className="login-layout" aria-labelledby="page-title">
     {/* Marka paneli CSS ile çizilir. Görsel desen formun klavye akışına girmez. */}
     <div className="login-brand-panel" aria-hidden="true">
-      <span className="login-brand-symbol">H+</span>
-      <span className="login-brand-title">HMS<br />Community</span>
+      <span className="login-brand-symbol"><Icon name="medical" /></span>
+      <span className="login-brand-title">Hospital<br />management</span>
     </div>
     <Card className="login-card">
       <header className="login-heading">

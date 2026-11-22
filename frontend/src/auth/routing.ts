@@ -42,7 +42,7 @@ export const workflowRoutes = [
     description: 'Enter a new patient’s details and relative contact.',
   },
   {
-    path: patientSearchPath, permission: 'searchPatients', icon: 'patient',
+    path: patientSearchPath, permission: 'searchPatients', icon: 'search',
     label: 'Search patients', heading: 'Patient search', description: 'Find patients by national ID or name.',
   },
   {
@@ -53,7 +53,7 @@ export const workflowRoutes = [
     path: staffManagementPath, permission: 'manageDemoStaff', icon: 'staff',
     label: 'Staff management', heading: 'Staff management', description: 'Manage demo accounts, roles and departments.',
   },
-] as const satisfies readonly { path: string; permission: Permission; icon: 'medical' | 'patient' | 'archive' | 'staff';
+] as const satisfies readonly { path: string; permission: Permission; icon: 'medical' | 'patient' | 'search' | 'archive' | 'staff';
   label: string; heading: string; description: string }[]
 
 // Menü ve kartlara yalnızca geçerli oturumun açabileceği ekranlar gider.

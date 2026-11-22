@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useAuth } from '../../auth/AuthProvider'
-import { Alert, Button, Card, TextField } from '../../components/ui'
+import { Alert, Button, Card, Icon, TextField } from '../../components/ui'
 import type { PatientSummary } from '../recentPatients'
 import { PatientResultList } from './PatientResultList'
 import { patientNameLimit, validatePatientQuery, type PatientQuery, type PatientSearchService, type SearchMode } from './model'
@@ -17,7 +17,7 @@ interface PatientSearchPageProps {
 }
 
 const searchModes: { value: SearchMode; label: string }[] = [
-  { value: 'nationalId', label: 'National ID' }, { value: 'name', label: 'Name' },
+  { value: 'nationalId', label: 'T.C. Kimlik No' }, { value: 'name', label: 'Name' },
 ]
 
 // Profil düzenlenirken arama bellekte kalır. İş akışından ayrılınca ölçütler ve sonuçlar kaldırılır.
@@ -80,7 +80,7 @@ export function PatientSearchPage({ service, refreshVersion, onRefreshReady, act
 
   const headingId = active ? 'page-title' : 'patient-search-title'
   const demoPatients = service.listDemoPatients?.()
-  const queryLabel = mode === 'nationalId' ? 'Synthetic national ID' : 'Patient name'
+  const queryLabel = mode === 'nationalId' ? 'T.C. Kimlik No' : 'Patient name'
   const statusText = state.status === 'idle' ? 'Search to see matching patients.'
     : state.status === 'loading' ? 'Searching patients…'
     : state.status === 'success'
@@ -91,7 +91,7 @@ export function PatientSearchPage({ service, refreshVersion, onRefreshReady, act
   return <section className="intro patient-search" aria-labelledby={headingId}>
     <div className="page-heading">
       <h1 id={headingId} tabIndex={-1}>Search patients</h1>
-      <p className="muted">Search by exact synthetic national ID or part of a patient’s name.</p>
+      <p className="muted">Enter an 11-digit T.C. Kimlik No or part of a patient’s name.</p>
     </div>
     {patientSearchMockEnabled && <Alert tone="warning">Demo patient search is active. Results are synthetic.</Alert>}
     <Card className="patient-search-controls">
@@ -112,7 +112,7 @@ export function PatientSearchPage({ service, refreshVersion, onRefreshReady, act
         </fieldset>
         <TextField id="patient-search-query" name="patient-search-query" label={queryLabel}
           inputMode={mode === 'nationalId' ? 'numeric' : undefined}
-          maxLength={mode === 'nationalId' ? 11 : patientNameLimit}
+          maxLength={mode === 'name' ? patientNameLimit : undefined}
           required value={input} error={inputError}
           onChange={event => {
             setInput(event.target.value)
@@ -120,6 +120,7 @@ export function PatientSearchPage({ service, refreshVersion, onRefreshReady, act
           }} />
         <div className="patient-search-actions">
           <Button type="submit" disabled={state.status === 'loading'} loading={state.status === 'loading'}>
+            {state.status !== 'loading' && <Icon name="search" />}
             {state.status === 'loading' ? 'Searching…' : 'Search'}
           </Button>
           <Button variant="secondary" disabled={input === '' && !inputError && state.status === 'idle'} onClick={() => {
@@ -147,12 +148,10 @@ export function PatientSearchPage({ service, refreshVersion, onRefreshReady, act
       <h2 id="recent-patients">Recently registered in this session</h2>
       <PatientResultList patients={recentPatients} role={role} />
     </section>}
-    <section className="patient-search-results patient-list--additional" aria-labelledby="patient-list-heading">
-      <h2 id="patient-list-heading">{demoPatients ? 'Demo patient list' : 'Patient list'}</h2>
-      {demoPatients ? demoPatients.length > 0
-        ? <PatientResultList patients={demoPatients} role={role} />
-        : <p className="muted">No synthetic patients are available.</p>
-        : <Alert>Full patient listing requires backend support.</Alert>}
-    </section>
+    {demoPatients && <section className="patient-search-results patient-list--additional" aria-labelledby="patient-list-heading">
+      <h2 id="patient-list-heading">Demo patient list</h2>
+      {demoPatients.length > 0 ? <PatientResultList patients={demoPatients} role={role} />
+        : <p className="muted">No synthetic patients are available.</p>}
+    </section>}
   </section>
 }

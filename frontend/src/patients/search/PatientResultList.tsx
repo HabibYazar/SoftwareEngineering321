@@ -12,13 +12,13 @@ export function PatientResultList({ patients, role }: { patients: SearchRecord[]
     {patients.map(patient => <li key={patient.id}>
       <Card className="patient-result-card">
         <div className="patient-result-heading">
-          <span className="doctor-icon"><Icon name="patient" /></span>
+          <span className="doctor-icon"><Icon name="staff" /></span>
           <div>
             <h3>{patient.firstName} {patient.lastName}</h3>
             <p className="muted">Condition level: {patient.conditionLevel.toLowerCase()}</p>
           </div>
         </div>
-        {patient.nationalId && <p className="muted">National ID <span>{patient.nationalId}</span></p>}
+        {patient.nationalId && <p className="muted">T.C. Kimlik No <span>{patient.nationalId}</span></p>}
         {hasPermission(role, 'editPatients') && <a className="button button--tertiary"
           href={'#' + patientEditPath(patient.id)}
           aria-label={'Edit profile: ' + patient.firstName + ' ' + patient.lastName}>Edit profile <Icon name="arrow" /></a>}

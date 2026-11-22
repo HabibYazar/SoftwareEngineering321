@@ -117,6 +117,15 @@ test('local phone paste replaces the selection and cannot silently truncate extr
   assert.match(editTurkishMobile('', '0506434263x', 11).error, /starting with 05/)
 })
 
+test('international mobile entry formats locally without truncating extra digits', () => {
+  for (const raw of ['+905064342632', '+90 (506) 434-26-32', '0090 506 434 26 32']) {
+    assert.deepEqual(editTurkishMobile('', raw, raw.length), { value: '0506 434 26 32', caret: 14 })
+  }
+  for (const raw of ['+90', '+9050643426321', '+90 212 434 26 32', '+49 506 434 26 32']) {
+    assert.ok(editTurkishMobile('', raw, raw.length).error)
+  }
+})
+
 test('stored patient and relative phones open locally without rewriting unrelated legacy numbers', () => {
   const patient = { ...createMockPatientStore().list()[0], phone: '+905064342632',
     relativeInformation: { fullName: 'Synthetic Contact', relationship: 'Sibling', phone: '+905321234567' } }

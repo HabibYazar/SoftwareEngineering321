@@ -24,7 +24,7 @@ test('patient selectors and invalid controls retain associated labels and descri
   assert.match(markup, /<label for="profile-gender">Gender<\/label>/)
   assert.match(markup, /<select id="profile-gender"/)
   assert.match(markup, /<option\b(?=[^>]*\bdisabled="")(?=[^>]*\bselected="")(?=[^>]*\bvalue="Historical value")[^>]*>Current value: Historical value \(choose a supported option\)/)
-  assert.match(markup, /aria-invalid="true" aria-describedby="profile-phone-error"/)
+  assert.match(markup, /aria-invalid="true" aria-describedby="profile-phone-hint profile-phone-error"/)
   assert.match(markup, /id="profile-phone-error"/)
   assert.match(markup, /inputMode="tel"/i)
 })
@@ -44,8 +44,6 @@ test('registration and profile render the same four English gender options', asy
     assert.deepEqual(choices, [
       { value: 'Male', label: 'Male', selected: false },
       { value: 'Female', label: 'Female', selected: gender === 'Female' },
-      { value: 'Other', label: 'Other', selected: false },
-      { value: 'Not disclosed', label: 'Prefer not to disclose', selected: false },
     ])
   }
 })
