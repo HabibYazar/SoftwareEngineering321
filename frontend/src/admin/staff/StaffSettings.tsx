@@ -19,15 +19,19 @@ export function StaffSettings({ data, busy, setPermission, setAssignment }: Sett
     <Card>
       <h2 id="demo-permission-heading">Demo role-permission matrix</h2>
       <p className="muted">Changes here affect this preview only.</p>
-      <div className="table-scroll" role="region" aria-labelledby="demo-permission-heading" tabIndex={0}>
-        <table className="data-table">
-          <thead><tr><th scope="col">Role</th>{permissions.map(([key, label]) => <th scope="col" key={key}>{label}</th>)}</tr></thead>
-          <tbody>{roles.map(role => <tr key={role}>
-            <th scope="row">{roleLabels[role]}</th>
-            {permissions.map(([permission, label]) => <td key={permission}>
-              <input type="checkbox" aria-label={roleLabels[role] + ': ' + label} disabled={busy}
-                checked={data.rolePermissions[role].includes(permission)}
-                onChange={event => setPermission(role, permission, event.target.checked)} />
+      {/* Tek kontrol kümesi masaüstünde tablo, mobilde rol kartları olarak sunulur. */}
+      <div className="permission-region" role="region" aria-labelledby="demo-permission-heading" tabIndex={0}>
+        <table className="data-table permission-table" role="table">
+          <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Role</th>{permissions.map(([key, label]) => <th scope="col" role="columnheader" key={key}>{label}</th>)}</tr></thead>
+          <tbody role="rowgroup">{roles.map(role => <tr key={role} role="row">
+            <th scope="row" role="rowheader">{roleLabels[role]}</th>
+            {permissions.map(([permission, label]) => <td key={permission} role="cell">
+              <label className="permission-control">
+                <input type="checkbox" aria-label={roleLabels[role] + ': ' + label} disabled={busy}
+                  checked={data.rolePermissions[role].includes(permission)}
+                  onChange={event => setPermission(role, permission, event.target.checked)} />
+                <span aria-hidden="true">{label}</span>
+              </label>
             </td>)}
           </tr>)}</tbody>
         </table>

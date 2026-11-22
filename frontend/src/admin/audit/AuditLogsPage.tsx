@@ -69,7 +69,7 @@ export function AuditLogsPage({ service, refreshVersion }: { service: AuditServi
             {newestFirst ? 'Show oldest first' : 'Show newest first'}
           </Button>
         </div>
-        {state.status === 'loading' && <p role="status">Loading audit events…</p>}
+        {state.status === 'loading' && <p className="resource-loading" role="status">Loading audit events…</p>}
         {state.status === 'error' && <div className="admin-feedback">
           <Alert tone="error">Unable to load synthetic audit events.</Alert>
           <Button onClick={retry}>Try again</Button>
@@ -77,7 +77,7 @@ export function AuditLogsPage({ service, refreshVersion }: { service: AuditServi
         {state.status === 'success' && (events.length ? <>
           <p className="muted" role="status">{events.length} {events.length === 1 ? 'event' : 'events'}</p>
           <div className="table-scroll" role="region" aria-labelledby="audit-table-heading" tabIndex={0}>
-            <table className="data-table">
+            <table className="data-table audit-table">
               <thead><tr>
                 <th scope="col" aria-sort={newestFirst ? 'descending' : 'ascending'}>Timestamp (UTC)</th>
                 <th scope="col">Actor</th><th scope="col">Role</th><th scope="col">Action</th>

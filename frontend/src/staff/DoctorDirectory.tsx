@@ -35,7 +35,7 @@ function DoctorResults({ clinicians, department, query }: {
   const emptyMessage = query.trim() ? 'No doctors match your search.'
     : department ? 'No doctors are assigned to this department.' : 'No doctors are available.'
   return <>
-    <p className="result-count muted" role="status">
+    <p className="result-count muted" data-empty={matches.length === 0} role="status">
       {matches.length === 0 ? emptyMessage : matches.length + (matches.length === 1 ? ' doctor' : ' doctors')}
     </p>
     {matches.length > 0 && <ul className="doctor-grid">
@@ -89,7 +89,7 @@ export function DoctorDirectory({ directory, refreshVersion }: { directory: Dire
     <Card className="directory-filter">
       <section aria-labelledby="department-heading">
         <h2 id="department-heading">Departments</h2>
-        {departmentState.status === 'loading' && <p className="muted" role="status">Loading departments…</p>}
+        {departmentState.status === 'loading' && <p className="muted resource-loading" role="status">Loading departments…</p>}
         {departmentState.status === 'error' && <DirectoryFailure
           message={departmentError instanceof DepartmentError ? departmentError.message : 'Unable to load departments.'}
           retry={canRetryDepartments ? departmentRequest.retry : undefined} />}
@@ -104,7 +104,7 @@ export function DoctorDirectory({ directory, refreshVersion }: { directory: Dire
         <TextField label="Search by name" type="search" value={query}
           onChange={event => setQuery(event.target.value)} />
       </div>
-      {results.state.status === 'loading' && <p className="result-state muted" role="status">Loading doctors…</p>}
+      {results.state.status === 'loading' && <p className="result-state muted resource-loading" role="status">Loading doctors…</p>}
       {results.state.status === 'error' && <DirectoryFailure
         message={doctorError instanceof StaffError ? doctorError.message : 'Unable to load doctors.'}
         retry={canRetryDoctors ? results.retry : undefined} />}

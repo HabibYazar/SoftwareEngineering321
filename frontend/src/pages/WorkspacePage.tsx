@@ -2,24 +2,39 @@ import { listWorkflowRoutes, roleLabels } from '../auth/routing'
 import type { Role } from '../auth/types'
 import { Card, Icon } from '../components/ui'
 
-// Kartlar, yan menüyle aynı izinli iş akışlarını kullanır.
+// Öne çıkan eylem ve diğer kartlar aynı izinli rota listesinden gelir.
 export function WorkspacePage({ role }: { role: Role }) {
-  const workflows = listWorkflowRoutes(role)
+  const [first, ...otherWorkflows] = listWorkflowRoutes(role)
 
-  return <section className="intro" aria-labelledby="page-title">
-    <div className="page-heading">
+  return <section className="intro workspace" aria-labelledby="page-title">
+    <header className="page-heading workspace-heading">
+      <span className="feature-icon"><Icon name="home" /></span>
       <h1 id="page-title" tabIndex={-1}>{roleLabels[role]} home</h1>
-    </div>
-    {workflows.length ? <div className="grid workspace-grid">
-      {workflows.map(({ path, icon, heading, description, label }) => <Card className="workspace-action" key={path}>
-        <span className="doctor-icon"><Icon name={icon} /></span>
-        <h2>{heading}</h2>
-        <p className="muted">{description}</p>
-        <a className="button button--primary" href={'#' + path}>{label} <Icon name="arrow" /></a>
-      </Card>)}
-    </div> : <Card className="workspace-action">
-      <h2>You are signed in</h2>
-      <p className="muted">Welcome to your {roleLabels[role].toLowerCase()} workspace.</p>
+    </header>
+    {/* Bento ızgarası yalnızca sunumu düzenler. İzinli eylemler ve bağlantıları aynı kalır. */}
+    {first && <div className="workspace-bento" data-supporting={otherWorkflows.length > 0}>
+      <div className="workspace-feature">
+        <div className="feature-summary">
+          <span className="feature-icon"><Icon name={first.icon} /></span>
+          <div><h2>{first.heading}</h2><p>{first.description}</p></div>
+        </div>
+        <a className="button button--primary" href={'#' + first.path}>{first.label} <Icon name="arrow" /></a>
+      </div>
+      {otherWorkflows.length > 0 && <section className="workspace-actions" aria-labelledby="workflow-title">
+        <h2 id="workflow-title">More workflows</h2>
+        <div className="grid workspace-grid">
+          {otherWorkflows.map(({ path, icon, heading, description, label }) => <a className="workspace-link" key={path} href={'#' + path} aria-label={label}>
+            <span className="doctor-icon"><Icon name={icon} /></span>
+            <h3>{heading}</h3>
+            <p className="muted">{description}</p>
+            <span className="workspace-arrow"><Icon name="arrow" /></span>
+          </a>)}
+        </div>
+      </section>}
+    </div>}
+    {!first && <Card className="workspace-empty">
+      <span className="doctor-icon"><Icon name="check" /></span>
+      <div><h2>You are signed in</h2><p className="muted">Welcome to your {roleLabels[role].toLowerCase()} workspace.</p></div>
     </Card>}
   </section>
 }

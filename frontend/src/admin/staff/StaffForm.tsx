@@ -16,9 +16,9 @@ export function StaffForm({ record, busy, save, cancel }: {
     save(draft)
   }
 
-  return <Card>
+  return <Card className="admin-edit-card">
     <h2>{record ? 'Edit demo staff account' : 'Add demo staff account'}</h2>
-    <form className="admin-filters" onSubmit={submit} autoComplete="off">
+    <form className="admin-filters" aria-busy={busy} onSubmit={submit} autoComplete="off">
       <TextField label="Display name" value={draft.displayName} required maxLength={100} disabled={busy}
         onChange={event => setDraft({ ...draft, displayName: event.target.value })} />
       <TextField label="Username" value={draft.username} required minLength={3} maxLength={40} disabled={busy}
@@ -31,7 +31,7 @@ export function StaffForm({ record, busy, save, cancel }: {
         </select>
       </div>
       <div className="admin-actions">
-        <Button type="submit" disabled={busy}>{busy ? 'Saving demo account…' : 'Save demo account'}</Button>
+        <Button type="submit" disabled={busy} loading={busy}>{busy ? 'Saving demo account…' : 'Save demo account'}</Button>
         <Button variant="secondary" disabled={busy} onClick={cancel}>Cancel</Button>
       </div>
     </form>

@@ -58,14 +58,14 @@ export function PatientProfilePage({ patientId, ...props }: ProfileProps & { pat
     </div>
     {patientProfileMockEnabled && <Alert tone="warning">Demo profile editing is active. Records are synthetic and temporary.</Alert>}
     {!service.canUpdate && <Alert tone="warning">{new PatientProfileError('unavailable').message}</Alert>}
-    <Card>
+    <Card className={record.status === 'ready' && !error ? 'form-surface' : undefined}>
       {error ? <div className="profile-actions">
         <Alert tone="error">{error.message}</Alert>
         <div className="profile-buttons">
           {(error.code === 'network' || error.code === 'server') && <Button onClick={retry}>Try again</Button>}
           <SearchLink>Back to search</SearchLink>
         </div>
-      </div> : record.status === 'loading' ? <p role="status">Loading patient profile…</p>
+      </div> : record.status === 'loading' ? <p className="resource-loading" role="status">Loading patient profile…</p>
         : record.status === 'ready' && <ProfileForm {...props} initial={record.patient} />}
     </Card>
   </section>
@@ -164,7 +164,7 @@ function ProfileForm({ initial, service, onDirtyChange, onSaved }: ProfileProps 
       {!advanced && hasRelative && !includeRelative && <p className="muted">Saving will remove this relative contact.</p>}
       {(advanced || includeRelative) && <PatientRelativeFields {...fields} advanced={advanced} />}
       <div className="registration-actions profile-buttons">
-        <Button type="submit" disabled={disabled || !changed}>{saving ? 'Saving…' : 'Save changes'}</Button>
+        <Button type="submit" disabled={disabled || !changed} loading={saving}>{saving ? 'Saving…' : 'Save changes'}</Button>
         <SearchLink>{feedback?.tone === 'info' || !service.canUpdate ? 'Back to search' : 'Cancel'}</SearchLink>
         <span className="sr-only" role="status">{saving ? 'Saving patient profile.' : ''}</span>
       </div>

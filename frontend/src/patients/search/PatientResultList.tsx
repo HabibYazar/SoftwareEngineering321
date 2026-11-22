@@ -19,7 +19,7 @@ export function PatientResultList({ patients, role }: { patients: SearchRecord[]
           </div>
         </div>
         {patient.nationalId && <p className="muted">National ID <span>{patient.nationalId}</span></p>}
-        {hasPermission(role, 'editPatients') && <a className="button button--secondary"
+        {hasPermission(role, 'editPatients') && <a className="button button--tertiary"
           href={'#' + patientEditPath(patient.id)}
           aria-label={'Edit profile: ' + patient.firstName + ' ' + patient.lastName}>Edit profile <Icon name="arrow" /></a>}
       </Card>

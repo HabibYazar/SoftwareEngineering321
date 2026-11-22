@@ -33,7 +33,7 @@ export function ArchitecturePage({ refreshVersion }: { refreshVersion: number })
       <Alert tone="warning"><strong>Educational prototype only.</strong> Some clinical workflows are available only as demonstrations. Do not use real patient data or deploy to a hospital.</Alert>
       <p className="status" role="status"><span aria-hidden="true" className={`dot ${status}`} />Backend: {status === 'checking' ? 'Checking…' : status === 'online' ? 'Health endpoint online' : 'Unavailable'}</p>
     </section>
-    <section aria-labelledby="modules-title"><h2 id="modules-title">Planned Community modules</h2>
+    <section className="architecture-modules" aria-labelledby="modules-title"><h2 id="modules-title">Planned Community modules</h2>
       {/* Modül kartları mimari kapsamı gösterir. Ekranların erişilebilirliği rol menüsünde belirlenir. */}
       <div className="grid">{modules.map(name => <Card key={name} className="architecture-tile">
         <span className="doctor-icon"><Icon name="department" /></span>

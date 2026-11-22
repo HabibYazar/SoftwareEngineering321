@@ -1,4 +1,5 @@
 import type { MouseEvent, ReactNode } from 'react'
+import { roleLabels } from '../auth/routing'
 import type { Role } from '../auth/types'
 import { NavigationControls } from './NavigationControls'
 import { Sidebar } from './Sidebar'
@@ -26,7 +27,7 @@ export function AppLayout({ children, navigation, onNavigate, ...sidebar }: AppL
     onNavigate(link.hash.slice(1))
   }
 
-  return <div className="shell" onClick={handleLinkClick}>
+  return <div className={`shell${sidebar.role ? '' : ' shell--guest'}`} onClick={handleLinkClick}>
     <a className="skip-link" href="#main-content" onClick={event => {
       // Hash yönlendirmesini değiştirmeden klavye odağını içeriğe taşır.
       event.preventDefault()
@@ -34,8 +35,12 @@ export function AppLayout({ children, navigation, onNavigate, ...sidebar }: AppL
     }}>Skip to main content</a>
     <Sidebar {...sidebar} />
     <main className="main-content" id="main-content" tabIndex={-1}>
-      <NavigationControls {...navigation} />
-      {children}
+      {/* Üst araç çubuğu mevcut geçmiş denetimlerini içerikten ayırır. */}
+      <div className="workspace-bar">
+        {sidebar.role && <span className="workspace-context">Workspace <span aria-hidden="true">/</span> <strong>{roleLabels[sidebar.role]}</strong></span>}
+        <NavigationControls {...navigation} />
+      </div>
+      <div className="workspace-content">{children}</div>
     </main>
   </div>
 }

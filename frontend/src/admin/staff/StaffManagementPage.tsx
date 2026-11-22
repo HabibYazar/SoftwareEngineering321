@@ -74,25 +74,25 @@ export function StaffManagementPage({ service, refreshVersion }: {
             </select>
           </div>
         </div>
-        {state.status === 'loading' && <p role="status">Loading demo staff…</p>}
+        {state.status === 'loading' && <p className="resource-loading" role="status">Loading demo staff…</p>}
         {state.status === 'error' && <div className="admin-feedback">
           <Alert tone="error">Unable to load demo staff.</Alert><Button onClick={retry}>Try again</Button>
         </div>}
         {state.status === 'success' && (people.length ? <div className="table-scroll" role="region" aria-labelledby="staff-table-heading" tabIndex={0}>
-          <table className="data-table">
+          <table className="data-table staff-table">
             <thead><tr><th scope="col">Staff member</th><th scope="col">Role</th><th scope="col">Status</th><th scope="col">Demo actions</th></tr></thead>
             <tbody>{people.map(person => <tr key={person.id}>
               <th scope="row"><strong>{person.displayName}</strong><small className="muted">{person.username}</small></th>
-              <td>{roleLabels[person.role]}</td>
+              <td><span className="role-chip">{roleLabels[person.role]}</span></td>
               <td><span className="status-chip" data-status={person.active ? 'Active' : 'Inactive'}>{person.active ? 'Active' : 'Inactive'}</span></td>
               <td><div className="admin-actions">
                 <Button variant="secondary" disabled={busy} onClick={() => openForm(person)}>Edit</Button>
-                <Button variant="secondary" disabled={busy} onClick={() => {
+                <Button variant={person.active ? 'danger' : 'secondary'} disabled={busy} onClick={() => {
                   if (person.active && !window.confirm('DEMO: Deactivate this staff account?')) return
                   void operate(() => service.setActive(person.id, !person.active), person.active
                     ? 'Demo account deactivated.' : 'Demo account activated.')
                 }}>{person.active ? 'Deactivate' : 'Activate'}</Button>
-                <Button variant="secondary" disabled={busy || !person.active} onClick={() => {
+                <Button variant="tertiary" disabled={busy || !person.active} onClick={() => {
                   if (window.confirm('DEMO: Request a simulated password reset?')) {
                     void operate(() => service.requestPasswordReset(person.id),
                       'Demo password reset requested. No password or notification was generated.')

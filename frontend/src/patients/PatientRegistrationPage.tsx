@@ -114,7 +114,7 @@ export function PatientRegistrationPage({ service, onDirtyChange, onRegistered }
     </div>
     {registrationMockEnabled && <Alert tone="warning">Demo registration is active. Records are synthetic and temporary.</Alert>}
     {registered ? <RegistrationSuccess patient={registered} canEdit={hasPermission(role, 'editPatients')}
-      noticeRef={notice} onRegisterAnother={() => { focusAfterRender.current = 'first'; setEntry(current => ({ ...current, registered: null })) }} /> : <Card>
+      noticeRef={notice} onRegisterAnother={() => { focusAfterRender.current = 'first'; setEntry(current => ({ ...current, registered: null })) }} /> : <Card className="form-surface">
       {feedback && <div ref={notice} tabIndex={-1} className="registration-feedback">
         <Alert tone={feedback.tone}>{feedback.message}</Alert>
       </div>}
@@ -131,7 +131,7 @@ export function PatientRegistrationPage({ service, onDirtyChange, onRegistered }
         </label>}
         {showRelative && <PatientRelativeFields {...fields} advanced={advanced} />}
         <div className="registration-actions">
-          <Button type="submit" disabled={saving}>{saving ? 'Registering…' : 'Register patient'}</Button>
+          <Button type="submit" disabled={saving} loading={saving}>{saving ? 'Registering…' : 'Register patient'}</Button>
           <span className="sr-only" role="status">{saving ? 'Registration in progress.' : ''}</span>
         </div>
       </form>

@@ -94,7 +94,7 @@ export function PatientSearchPage({ service, refreshVersion, onRefreshReady, act
       <p className="muted">Search by exact synthetic national ID or part of a patient’s name.</p>
     </div>
     {patientSearchMockEnabled && <Alert tone="warning">Demo patient search is active. Results are synthetic.</Alert>}
-    <Card>
+    <Card className="patient-search-controls">
       <form ref={form} className="patient-search-form" autoComplete="off" noValidate onSubmit={submit}>
         <fieldset>
           <legend>Search by</legend>
@@ -119,7 +119,7 @@ export function PatientSearchPage({ service, refreshVersion, onRefreshReady, act
             clearResults()
           }} />
         <div className="patient-search-actions">
-          <Button type="submit" disabled={state.status === 'loading'}>
+          <Button type="submit" disabled={state.status === 'loading'} loading={state.status === 'loading'}>
             {state.status === 'loading' ? 'Searching…' : 'Search'}
           </Button>
           <Button variant="secondary" disabled={input === '' && !inputError && state.status === 'idle'} onClick={() => {
@@ -132,7 +132,7 @@ export function PatientSearchPage({ service, refreshVersion, onRefreshReady, act
     </Card>
     <section className="patient-search-results" aria-labelledby="patient-results-heading">
       <h2 id="patient-results-heading">Search results</h2>
-      <p className="muted" role="status">{statusText}</p>
+      <p className={state.status === 'loading' ? 'muted resource-loading' : 'muted'} role="status">{statusText}</p>
       {state.status === 'error' && <>
         <Alert tone="error">{state.message}</Alert>
         {state.canRetry && <Button variant="secondary" onClick={() => {
@@ -143,11 +143,11 @@ export function PatientSearchPage({ service, refreshVersion, onRefreshReady, act
       {state.status === 'success' && state.patients.length > 0 && <PatientResultList patients={state.patients} role={role} />}
     </section>
     {/* Gerçek arama ölçüt ister. Oturum özeti ve sentetik liste bu uç noktayı kullanmaz. */}
-    {recentPatients.length > 0 && <section className="patient-search-results" aria-labelledby="recent-patients">
+    {recentPatients.length > 0 && <section className="patient-search-results patient-list--session" aria-labelledby="recent-patients">
       <h2 id="recent-patients">Recently registered in this session</h2>
       <PatientResultList patients={recentPatients} role={role} />
     </section>}
-    <section className="patient-search-results" aria-labelledby="patient-list-heading">
+    <section className="patient-search-results patient-list--additional" aria-labelledby="patient-list-heading">
       <h2 id="patient-list-heading">{demoPatients ? 'Demo patient list' : 'Patient list'}</h2>
       {demoPatients ? demoPatients.length > 0
         ? <PatientResultList patients={demoPatients} role={role} />

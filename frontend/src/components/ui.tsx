@@ -2,6 +2,7 @@ import { useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactN
 
 const icons = {
   home: '⌂', medical: '✚', archive: '▤', signIn: '↪', signOut: '↩',
+  back: '←', refresh: '↻', check: '✓',
   sun: '☼', moon: '☾', menu: '☰', close: '×', arrow: '→', department: '◈', all: '⊞', patient: '✎', staff: '☷',
 }
 
@@ -10,10 +11,12 @@ export function Icon({ name }: { name: keyof typeof icons }) {
   return <span className="icon" aria-hidden="true">{icons[name]}</span>
 }
 
-// Ortak düğme biçimi, klavye davranışını tarayıcının yerel button öğesine bırakır.
-export function Button({ className = '', variant = 'primary', type = 'button', ...props }:
-  ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' }) {
-  return <button {...props} type={type} className={`button button--${variant} ${className}`} />
+// Görsel varyantlar ve bekleme göstergesi yerel button davranışını korur.
+export function Button({ className = '', variant = 'primary', type = 'button', loading = false, children, ...props }:
+  ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'tertiary' | 'danger'; loading?: boolean }) {
+  return <button {...props} type={type} className={`button button--${variant} ${className}`}>
+    {loading && <span className="button-spinner" aria-hidden="true" />}{children}
+  </button>
 }
 
 // Üretilen kimlik, alanı etiketi ve varsa hata mesajıyla ilişkilendirir.

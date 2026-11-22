@@ -1,50 +1,46 @@
-/* Form yalnızca yerleşim kurallarını tanımlar; yüzeyler, renk ve odak ortak stillerden gelir. */
-.registration { max-width: 54rem; }
-.registration-form, .registration-fields {
-  display: grid;
-  gap: var(--space-4);
-}
+/* Form bölümleri ayrı yüzeyler. Alanlar, hasta ve yakın bilgileri için aynı ızgarayı kullanır. */
+.registration { max-width: 72rem; }
+.form-surface.card { background: none; border: 0; padding: 0; box-shadow: none; }
+.registration-form, .registration-fields { display: grid; gap: var(--space-4) var(--space-6); }
 .registration-form fieldset {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  min-inline-size: 0;
-}
-.registration-form fieldset + fieldset {
-  border-top: 1px solid var(--border);
-  padding-top: var(--space-4);
+  margin: 0; padding: var(--card-padding); min-inline-size: 0; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--surface); box-shadow: var(--shadow);
 }
 .registration-form legend {
-  padding: 0;
-  margin-bottom: var(--space-2);
-  font-size: 1.1rem;
-  font-weight: 700;
+  padding: var(--space-1) var(--space-3); border: 1px solid var(--border); border-radius: 999px;
+  font-size: 0.94rem; font-weight: 730; background: var(--surface); color: var(--accent-secondary);
 }
-.registration-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.registration-fields { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
 .registration-wide { grid-column: 1 / -1; }
-.registration-form select, .registration-form textarea { font: inherit; }
+/* Klinik girişler opak kalır. Alan odağı yalnızca sınır ve yüzey rengini değiştirir. */
+.registration-fields .text-field { background: var(--inset); }
+.registration-fields .text-field:focus-visible { background: var(--surface); }
 .registration-form textarea { resize: vertical; }
-.registration-relative-note { margin: 0 0 var(--space-3); }
-.registration-checkbox {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-block-size: 44px;
+.registration-relative-note { margin: 0 0 var(--space-4); }
+.registration-checkbox { display: flex; align-items: center; gap: var(--space-3); min-block-size: 44px; }
+.registration-checkbox input { flex: none; accent-color: var(--accent); inline-size: 1.125rem; block-size: 1.125rem; }
+.registration-form > .registration-checkbox {
+  justify-self: start; background: var(--inset); padding-inline: var(--space-3);
+  border: 1px solid var(--border); border-radius: var(--control-radius);
 }
-.registration-checkbox input { accent-color: var(--accent); inline-size: 1.125rem; block-size: 1.125rem; }
+.registration-form > .registration-checkbox:focus-within { border-color: var(--accent); }
 .registration-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-3);
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--border);
+  display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: var(--space-3);
+  padding: var(--space-4); background: var(--surface); border: 1px solid var(--border); border-radius: var(--control-radius);
 }
+.registration-actions button[type="submit"] { min-inline-size: min(11rem, 100%); padding-inline: var(--space-6); }
 .registration-feedback { margin-bottom: var(--space-4); }
-.registration-success { border-inline-start: 4px solid var(--success); }
-.registration-success h2 { margin-bottom: var(--space-2); }
+.registration-success { border-top: 3px solid var(--success); }
 .registration-success .alert { margin-top: 0; }
-
-@media (max-width: 45rem) {
+.registration-summary { display: flex; align-items: center; gap: var(--space-4); margin: var(--space-5) 0; }
+.registration-summary .doctor-icon { background: var(--success-bg); color: var(--success); }
+.registration-summary h2, .registration-summary p { margin: 0; }
+.registration-success .registration-actions { background: var(--inset); justify-content: flex-start; }
+@media (min-width: 77rem) {
+  .registration-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .registration-wide { grid-column: span 2; }
+}
+@media (max-width: 39rem) {
   .registration-fields { grid-template-columns: minmax(0, 1fr); }
+  .registration-actions > .button { flex: 1 1 10rem; }
 }
