@@ -1,5 +1,7 @@
 package org.hmscommunity.staff;
 
+import org.hmscommunity.security.SecurityProblemHandler;
+import org.hmscommunity.security.authentication.AccessTokenService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -25,6 +27,12 @@ class StaffControllerTest {
 
     @MockitoBean
     private StaffService staffService;
+
+    @MockitoBean
+    private AccessTokenService accessTokenService;
+
+    @MockitoBean
+    private SecurityProblemHandler securityProblemHandler;
 
     @Test
     void listCliniciansWithoutFilter() throws Exception {
