@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Alert, Card } from '../components/ui'
+import { Alert, Card, Icon } from '../components/ui'
 type Status = 'checking' | 'online' | 'offline'
 const modules = [
   'Patient Management', 'Appointment Management', 'Doctor & Staff Management',
@@ -25,17 +25,19 @@ export function ArchitecturePage({ refreshVersion }: { refreshVersion: number })
     return () => controller.abort()
   }, [refreshVersion])
   return <>
-    <section className="intro">
-      <p className="eyebrow">OPEN-SOURCE HOSPITAL SYSTEM</p>
-      <h1 id="page-title" tabIndex={-1}>Architecture foundation</h1>
-      <p className="muted">Modular monolith · Spring Boot · React · PostgreSQL · Docker Compose</p>
-      <Alert tone="warning"><strong>Educational prototype only.</strong> All clinical modules are design placeholders. Do not use real patient data or deploy to a hospital.</Alert>
+    <section className="intro" aria-labelledby="page-title">
+      <div className="page-heading">
+        <h1 id="page-title" tabIndex={-1}>Architecture foundation</h1>
+        <p className="muted">Modular monolith · Spring Boot · React · PostgreSQL · Docker Compose</p>
+      </div>
+      <Alert tone="warning"><strong>Educational prototype only.</strong> Some clinical workflows are available only as demonstrations. Do not use real patient data or deploy to a hospital.</Alert>
       <p className="status" role="status"><span aria-hidden="true" className={`dot ${status}`} />Backend: {status === 'checking' ? 'Checking…' : status === 'online' ? 'Health endpoint online' : 'Unavailable'}</p>
     </section>
     <section aria-labelledby="modules-title"><h2 id="modules-title">Planned Community modules</h2>
-      <div className="grid">{modules.map((name, index) => <Card key={name}>
-        <small>{String(index + 1).padStart(2, '0')}</small><h3>{name}</h3>
-        <p className="muted">Architecture defined · domain workflows not implemented</p>
+      {/* Modül kartları mimari kapsamı gösterir. Ekranların erişilebilirliği rol menüsünde belirlenir. */}
+      <div className="grid">{modules.map(name => <Card key={name} className="architecture-tile">
+        <span className="doctor-icon"><Icon name="department" /></span>
+        <h3>{name}</h3>
       </Card>)}</div>
     </section>
     <footer>Sprint 1 deliverables: proposal · vision &amp; boundary · OpenAPI · RACI · Git-Flow · backlog</footer>

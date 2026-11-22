@@ -2,7 +2,7 @@ import { useId, type ButtonHTMLAttributes, type InputHTMLAttributes, type ReactN
 
 const icons = {
   home: '⌂', medical: '✚', archive: '▤', signIn: '↪', signOut: '↩',
-  sun: '☼', moon: '☾', menu: '☰', close: '×', arrow: '→', department: '◈', all: '⊞', patient: '✎',
+  sun: '☼', moon: '☾', menu: '☰', close: '×', arrow: '→', department: '◈', all: '⊞', patient: '✎', staff: '☷',
 }
 
 // İkonlar görünür etiketleri destekler. Ekran okuyucu metin etiketini tek kez okur.

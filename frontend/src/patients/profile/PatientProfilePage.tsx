@@ -4,8 +4,9 @@ import { patientSearchPath } from '../../auth/routing'
 import { Alert, Button, Card } from '../../components/ui'
 import { PatientDetailFields, PatientRelativeFields } from '../PatientDetailFields'
 import type { Patient } from '../types'
+import { useFieldFeedback } from '../useFieldFeedback'
 import { useUnsavedPatientForm } from '../useUnsavedPatientForm'
-import type { PatientDetailsDraft, PatientDetailsErrors, PatientDetailsField } from '../validation'
+import type { PatientDetailsDraft, PatientDetailsField } from '../validation'
 import { draftFromPatient, isProfileDirty, PatientProfileError, validateProfile, type PatientProfileService } from './model'
 import { createProfileSaver } from './saveRunner'
 import { patientProfileMockEnabled } from './service'
@@ -14,7 +15,7 @@ import './profile.css'
 interface ProfileProps {
   service: PatientProfileService
   onDirtyChange: (dirty: boolean) => void
-  onSaved: () => void
+  onSaved: (patient: Patient) => void
 }
 
 type LoadState = { status: 'loading' } | { status: 'ready'; patient: Patient } | { status: 'error'; error: PatientProfileError }
@@ -76,13 +77,15 @@ function ProfileForm({ initial, service, onDirtyChange, onSaved }: ProfileProps 
   const [patient, setPatient] = useState(initial)
   const [draft, setDraft] = useState(() => draftFromPatient(initial))
   const [includeRelative, setIncludeRelative] = useState(Boolean(initial.relativeInformation))
-  const [errors, setErrors] = useState<PatientDetailsErrors>({})
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const [saving, setSaving] = useState(false)
   const [saver] = useState(() => createProfileSaver(service))
   const form = useRef<HTMLFormElement>(null)
   const notice = useRef<HTMLDivElement>(null)
   const focusAfterRender = useRef<'field' | 'notice' | null>(null)
+  const validation = validateProfile(draft, includeRelative)
+  const fieldsFeedback = useFieldFeedback<PatientDetailsField>('errors' in validation ? validation.errors : {})
+  const { errors } = fieldsFeedback
   const changed = isProfileDirty(patient, draft, includeRelative)
   const advanced = draft.conditionLevel === 'ADVANCED'
   const hasRelative = Boolean(patient.relativeInformation)
@@ -102,7 +105,7 @@ function ProfileForm({ initial, service, onDirtyChange, onSaved }: ProfileProps 
   function update<Field extends PatientDetailsField>(field: Field, value: PatientDetailsDraft[Field]) {
     if (field === 'conditionLevel' && value === 'ADVANCED') setIncludeRelative(true)
     setDraft(current => ({ ...current, [field]: value }))
-    setErrors(current => ({ ...current, [field]: undefined }))
+    fieldsFeedback.clearField(field)
     setFeedback(null)
   }
 
@@ -111,36 +114,35 @@ function ProfileForm({ initial, service, onDirtyChange, onSaved }: ProfileProps 
     event.preventDefault()
     if (!service.canUpdate || !changed || saver.pending()) return
     setFeedback(null)
-    const result = validateProfile(draft, includeRelative)
-    if ('errors' in result) {
+    fieldsFeedback.submit()
+    if ('errors' in validation) {
       focusAfterRender.current = 'field'
-      setErrors(result.errors)
       return
     }
 
-    setErrors({})
     setSaving(true)
-    const saved = await saver.save(patient, result.payload, getAccessToken())
+    const saved = await saver.save(patient, validation.payload, getAccessToken())
     if (!saved) return
     setSaving(false)
     focusAfterRender.current = 'notice'
     if ('error' in saved) {
       // 400 alan hataları görünürse, global hata yerine ilk hatalı kontrole odaklanırız.
       if (saved.fieldErrors) {
-        setErrors(saved.fieldErrors)
+        fieldsFeedback.setServer(saved.fieldErrors)
         focusAfterRender.current = 'field'
       }
       setFeedback({ tone: 'error', message: saved.error })
       return
     }
+    fieldsFeedback.reset()
     setPatient(saved.patient)
     setDraft(draftFromPatient(saved.patient))
     setIncludeRelative(Boolean(saved.patient.relativeInformation))
     setFeedback({ tone: 'info', message: 'Patient profile saved.' })
-    onSaved()
+    onSaved(saved.patient)
   }
 
-  const fields = { prefix: 'profile', draft, errors, disabled, onChange: update }
+  const fields = { prefix: 'profile', draft, errors, disabled, onChange: update, onBlur: fieldsFeedback.touch }
   return <>
     {feedback && <div ref={notice} tabIndex={-1} className="registration-feedback">
       <Alert tone={feedback.tone}>{feedback.message}</Alert>

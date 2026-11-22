@@ -8,6 +8,8 @@ export const roleLabels: Record<Role, string> = {
 }
 
 export const doctorsPath = '/doctors'
+export const auditLogsPath = '/admin/audit-logs'
+export const staffManagementPath = '/admin/staff'
 export const registrationPath = '/patients/register'
 export const patientSearchPath = '/patients/search'
 const patientEditBase = '/patients/edit'
@@ -43,7 +45,15 @@ export const workflowRoutes = [
     path: patientSearchPath, permission: 'searchPatients', icon: 'patient',
     label: 'Search patients', heading: 'Patient search', description: 'Find patients by national ID or name.',
   },
-] as const satisfies readonly { path: string; permission: Permission; icon: 'medical' | 'patient';
+  {
+    path: auditLogsPath, permission: 'viewAuditLogs', icon: 'archive',
+    label: 'Audit logs', heading: 'Audit logs', description: 'Review synthetic audit events in the demo.',
+  },
+  {
+    path: staffManagementPath, permission: 'manageDemoStaff', icon: 'staff',
+    label: 'Staff management', heading: 'Staff management', description: 'Manage demo accounts, roles and departments.',
+  },
+] as const satisfies readonly { path: string; permission: Permission; icon: 'medical' | 'patient' | 'archive' | 'staff';
   label: string; heading: string; description: string }[]
 
 // Menü ve kartlara yalnızca geçerli oturumun açabileceği ekranlar gider.

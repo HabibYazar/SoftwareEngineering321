@@ -12,7 +12,7 @@ export interface StaffService {
 
 const messages = {
   access: 'You do not have access to the doctor directory.',
-  unavailable: 'The doctor directory is unavailable because the staff API is not part of this backend release.',
+  unavailable: 'The doctor directory is unavailable. This backend release does not provide the staff endpoint.',
   server: 'The doctor directory is temporarily unavailable.',
   response: 'The doctor directory returned an unexpected response.',
   network: 'Unable to reach the doctor directory. Check your connection.',

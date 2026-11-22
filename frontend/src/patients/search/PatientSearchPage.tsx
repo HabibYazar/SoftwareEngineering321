@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { useAuth } from '../../auth/AuthProvider'
-import { hasPermission } from '../../auth/permissions'
-import { patientEditPath } from '../../auth/routing'
 import { Alert, Button, Card, TextField } from '../../components/ui'
+import type { PatientSummary } from '../recentPatients'
+import { PatientResultList } from './PatientResultList'
 import { patientNameLimit, validatePatientQuery, type PatientQuery, type PatientSearchService, type SearchMode } from './model'
 import { createSearchRunner, type SearchState } from './searchRunner'
 import { patientSearchMockEnabled } from './service'
@@ -13,6 +13,7 @@ interface PatientSearchPageProps {
   refreshVersion: number
   onRefreshReady: (ready: boolean) => void
   active: boolean
+  recentPatients: PatientSummary[]
 }
 
 const searchModes: { value: SearchMode; label: string }[] = [
@@ -20,7 +21,7 @@ const searchModes: { value: SearchMode; label: string }[] = [
 ]
 
 // Profil düzenlenirken arama bellekte kalır. İş akışından ayrılınca ölçütler ve sonuçlar kaldırılır.
-export function PatientSearchPage({ service, refreshVersion, onRefreshReady, active }: PatientSearchPageProps) {
+export function PatientSearchPage({ service, refreshVersion, onRefreshReady, active, recentPatients }: PatientSearchPageProps) {
   const { getAccessToken, role } = useAuth()
   const [mode, setMode] = useState<SearchMode>('nationalId')
   const [input, setInput] = useState('')
@@ -78,6 +79,7 @@ export function PatientSearchPage({ service, refreshVersion, onRefreshReady, act
   }
 
   const headingId = active ? 'page-title' : 'patient-search-title'
+  const demoPatients = service.listDemoPatients?.()
   const queryLabel = mode === 'nationalId' ? 'Synthetic national ID' : 'Patient name'
   const statusText = state.status === 'idle' ? 'Search to see matching patients.'
     : state.status === 'loading' ? 'Searching patients…'
@@ -138,17 +140,19 @@ export function PatientSearchPage({ service, refreshVersion, onRefreshReady, act
           repeatSearch()
         }}>Try again</Button>}
       </>}
-      {state.status === 'success' && state.patients.length > 0 && <ul className="grid patient-result-list">
-        {state.patients.map(patient => <li key={patient.id}>
-          <Card className="patient-result-card">
-            <h3>{patient.firstName} {patient.lastName}</h3>
-            <p className="muted">National ID <span>{patient.nationalId}</span></p>
-            {hasPermission(role, 'editPatients') && <a className="button button--secondary"
-              href={'#' + patientEditPath(patient.id)}
-              aria-label={'Edit profile: ' + patient.firstName + ' ' + patient.lastName}>Edit profile</a>}
-          </Card>
-        </li>)}
-      </ul>}
+      {state.status === 'success' && state.patients.length > 0 && <PatientResultList patients={state.patients} role={role} />}
+    </section>
+    {/* Gerçek arama ölçüt ister. Oturum özeti ve sentetik liste bu uç noktayı kullanmaz. */}
+    {recentPatients.length > 0 && <section className="patient-search-results" aria-labelledby="recent-patients">
+      <h2 id="recent-patients">Recently registered in this session</h2>
+      <PatientResultList patients={recentPatients} role={role} />
+    </section>}
+    <section className="patient-search-results" aria-labelledby="patient-list-heading">
+      <h2 id="patient-list-heading">{demoPatients ? 'Demo patient list' : 'Patient list'}</h2>
+      {demoPatients ? demoPatients.length > 0
+        ? <PatientResultList patients={demoPatients} role={role} />
+        : <p className="muted">No synthetic patients are available.</p>
+        : <Alert>Full patient listing requires backend support.</Alert>}
     </section>
   </section>
 }

@@ -37,7 +37,7 @@ test('an empty staff array is a successful result', async () => {
 
 // Ham hata içeriği, ayrıştırma veya HTTP hatasında kullanıcıya yansımaz.
 test('staff errors never expose raw response content or activate demo data', async () => {
-  for (const [status, code] of [[401, 'access'], [403, 'access'], [404, 'server'], [500, 'server']]) {
+  for (const [status, code] of [[401, 'access'], [403, 'access'], [404, 'unavailable'], [500, 'server']]) {
     const service = createHttpStaffService(async () => new Response('server detail', { status }))
     await assert.rejects(service.listClinicians(null), error => error.code === code && !error.message.includes('server detail'))
   }

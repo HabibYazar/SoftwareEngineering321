@@ -3,7 +3,7 @@ import type { NewPatient, Patient } from './types.ts'
 import { isPatient } from './validation.ts'
 
 const syntheticDetails = {
-  dateOfBirth: '2000-01-01', gender: 'Not disclosed', phone: '0000000000',
+  dateOfBirth: '2000-01-01', gender: 'Not disclosed', phone: '+905000000000',
   address: 'Synthetic example address', conditionLevel: 'MILD',
 } as const
 

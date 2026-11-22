@@ -33,10 +33,17 @@
 }
 .registration-checkbox input { accent-color: var(--accent); inline-size: 1.125rem; block-size: 1.125rem; }
 .registration-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
   padding-top: var(--space-4);
   border-top: 1px solid var(--border);
 }
 .registration-feedback { margin-bottom: var(--space-4); }
+.registration-success { border-inline-start: 4px solid var(--success); }
+.registration-success h2 { margin-bottom: var(--space-2); }
+.registration-success .alert { margin-top: 0; }
 
 @media (max-width: 45rem) {
   .registration-fields { grid-template-columns: minmax(0, 1fr); }

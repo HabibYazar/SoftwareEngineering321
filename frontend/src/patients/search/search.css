@@ -27,6 +27,8 @@
 .patient-search-results { margin-top: var(--space-8); }
 .patient-search-results > p:empty { margin: 0; }
 .patient-result-list { padding: 0; margin: 0; list-style: none; }
-.patient-result-card { height: 100%; }
-.patient-result-card p { margin: var(--space-2) 0 0; }
+.patient-result-card { display: grid; align-content: start; gap: var(--space-3); height: 100%; }
+.patient-result-heading { display: flex; gap: var(--space-3); align-items: center; }
+.patient-result-card .button { margin-top: auto; justify-self: start; }
+.patient-result-card p { margin: 0; }
 .patient-result-card span { font-variant-numeric: tabular-nums; }

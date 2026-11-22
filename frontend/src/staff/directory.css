@@ -1,9 +1,11 @@
 /* Seçenekler ve sonuçlar alana göre yeni satıra geçer, uzun departman adları taşmaz. */
+.directory-filter { margin-top: var(--space-4); }
 .department-grid, .doctor-grid { display: grid; gap: var(--space-3); }
 .department-grid { grid-template-columns: repeat(auto-fill, minmax(min(10.5rem, 100%), 1fr)); }
 .department-button.button {
   justify-content: start; text-align: start; min-height: 58px; overflow-wrap: anywhere;
 }
+.department-button span { overflow-wrap: anywhere; }
 .department-button .icon { color: var(--accent); }
 .department-button.button[aria-pressed="true"] {
   background: var(--accent-soft); color: var(--accent); border-color: var(--accent);
