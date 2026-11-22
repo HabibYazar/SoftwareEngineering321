@@ -1,11 +1,6 @@
 spring:
   application:
     name: hms-community
-  datasource:
-    url: ${HMS_DB_URL:jdbc:postgresql://localhost:5432/hms_community}
-    username: ${HMS_DB_USER:hms}
-    password: ${HMS_DB_PASSWORD:local_demo_only_change_me}
-  autoconfigure:
     exclude:
       # Spring Boot'un rastgele parolalı bellek içi varsayılan kullanıcısı kapatılır:
       # kullanılmaz ve üretilen parolayı başlangıçta loga yazar.
