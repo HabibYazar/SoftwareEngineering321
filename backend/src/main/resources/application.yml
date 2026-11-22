@@ -1,6 +1,7 @@
 spring:
   application:
     name: hms-community
+
   autoconfigure:
     exclude:
       # Spring Boot'un rastgele parolalı bellek içi varsayılan kullanıcısı kapatılır:

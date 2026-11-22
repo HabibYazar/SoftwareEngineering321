@@ -34,11 +34,8 @@ TBD
 * **FR-09.1 (Department & Doctor Schema):** The relational database schema must enforce a foreign-key relationship (`department_id`) linking each doctor record to a valid department record.
 
 ##### Backend API Requirements (`#204` — Owner: `@Zmly007`)
-* **FR-09.2 (Deterministic Database Seeding):** On application startup, Flyway migrations must deterministically populate synthetic departments and doctor-to-department associations without duplicating records across container restarts.
-* **FR-09.3 (List All Departments Endpoint):** The backend REST API shall expose a `GET /api/departments` endpoint that queries the database and returns a JSON array of all available departments (including `id` and `name`) with HTTP `200 OK`.
-* **FR-09.4 (Filter Doctors by Department Endpoint):** The backend REST API shall expose a `GET /api/departments/{departmentId}/doctors` (or `GET /api/doctors?departmentId={id}`) endpoint that returns a JSON array containing only doctors assigned to the specified `departmentId` with HTTP `200 OK`.
-* **FR-09.5 (Invalid Department Handling):** If a client requests doctors for a non-existent `departmentId`, the backend shall return HTTP `404 Not Found` with a structured error payload rather than an unhandled server exception.
-* **FR-09.6 (Empty Department Handling):** If a valid department exists but has zero assigned doctors, the backend shall return HTTP `200 OK` with an empty JSON array (`[]`).
+* **FR-09.2 (List and Filter Clinicians Endpoint):** The backend REST API shall expose a `GET /api/v1/staff` endpoint supporting an optional `department` query parameter (`GET /api/v1/staff?department={name}`) that queries the database and returns a JSON array of matching clinician records with HTTP `200 OK`.
+* **FR-09.3 (Empty Filter Result Handling):** When filtering by a department that has no assigned clinicians or does not exist, the backend shall return HTTP `200 OK` with an empty JSON array (`[]`) rather than failing or throwing an unhandled exception.
 
 ##### Frontend Requirements (`#205` — Owner: `@ardaservetusta-lang`)
 
