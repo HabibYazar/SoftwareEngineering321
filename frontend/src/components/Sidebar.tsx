@@ -16,6 +16,7 @@ export function Sidebar({ role, route, busy, onSignOut }: SidebarProps) {
   const [expanded, setExpanded] = useState(false)
   const menuButton = useRef<HTMLButtonElement>(null)
   const workspace = role ? homePath(role) : '/login'
+  const workflows = listWorkflowRoutes(role)
 
   // Dar ekranda menüyü kapatınca odak gizlenen bir bağlantıda kalmaz.
   function closeMenu() {
@@ -34,7 +35,7 @@ export function Sidebar({ role, route, busy, onSignOut }: SidebarProps) {
     <div className="sidebar-heading">
       <a className="brand" href={'#' + workspace} onClick={closeMenu}>
         <span className="mark" aria-hidden="true">H+</span>
-        <span><strong>HMS</strong> Community</span>
+        <span className="brand-name">HMS <strong>Community</strong></span>
       </a>
       <button ref={menuButton} type="button" className="menu-toggle button button--secondary" aria-expanded={expanded}
         aria-controls="sidebar-menu" onClick={() => setExpanded(previous => !previous)}>
@@ -46,20 +47,21 @@ export function Sidebar({ role, route, busy, onSignOut }: SidebarProps) {
         <a href={'#' + workspace} aria-current={route === workspace ? 'page' : undefined} onClick={closeMenu}>
           <Icon name={role ? 'home' : 'signIn'} /> {role ? 'Home' : 'Sign in'}
         </a>
-        {/* Yetkisi bulunmayan iş akışı gezinme menüsünde oluşturulmaz. */}
-        {listWorkflowRoutes(role).map(({ path, label, icon }) =>
+        {/* Bölüm başlığı yalnızca oturumun erişebildiği iş akışları varsa görünür. */}
+        {workflows.length > 0 && <span className="menu-caption">Workflows</span>}
+        {workflows.map(({ path, label, icon }) =>
           <a key={path} href={'#' + path} aria-current={route === path ? 'page' : undefined} onClick={closeMenu}>
             <Icon name={icon} /> {label}
           </a>)}
-        <a href="#/foundation" aria-current={route === '/foundation' ? 'page' : undefined} onClick={closeMenu}>
+        <a className="reference-link" href="#/foundation" aria-current={route === '/foundation' ? 'page' : undefined} onClick={closeMenu}>
           <Icon name="archive" /> Architecture
         </a>
       </nav>
       <div className="sidebar-settings">
         <ThemeToggle />
         {role && <div className="sidebar-session">
-          <span className="sidebar-role">{roleLabels[role]}</span>
-          <Button variant="secondary" disabled={busy} onClick={() => {
+          <div className="sidebar-role"><span className="role-mark" aria-hidden="true">{roleLabels[role][0]}</span><strong>{roleLabels[role]}</strong></div>
+          <Button variant="tertiary" disabled={busy} onClick={() => {
             closeMenu()
             onSignOut()
           }}>

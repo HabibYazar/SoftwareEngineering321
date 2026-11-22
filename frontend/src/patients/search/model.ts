@@ -1,3 +1,4 @@
+import type { PatientSummary } from '../recentPatients.ts'
 import type { Patient } from '../types.ts'
 import { nationalIdPattern } from '../validation.ts'
 
@@ -5,6 +6,8 @@ export type SearchMode = 'nationalId' | 'name'
 export type PatientQuery = { mode: SearchMode; value: string }
 
 export interface PatientSearchService {
+  // Sadece açık demo servisinde bulunur. Gerçek HTTP servisi genel liste isteği üretmez.
+  listDemoPatients?(): PatientSummary[]
   search(query: PatientQuery, accessToken: string | null, signal?: AbortSignal): Promise<Patient[]>
 }
 

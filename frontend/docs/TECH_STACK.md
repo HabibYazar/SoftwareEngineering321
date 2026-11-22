@@ -33,7 +33,9 @@ npm.cmd test
 npm.cmd run build
 ```
 
-The build script runs `tsc -b` followed by `vite build`. Tests use Node's built-in runner and cover auth, staff, and navigation logic. Browser interaction checks are listed in the story documents. The [frontend README](../README.md) lists synthetic sign-in credentials.
+The build script runs `tsc -b` followed by `vite build`. Tests use Node's built-in runner for contracts, authorization, navigation, validation and synthetic services. A local Vite SSR harness checks accessible patient form markup and registration actions without opening an HTTP listener. This increment adds no dependencies. Browser interaction checks are listed in the story documents. The [frontend README](../README.md) lists synthetic sign-in credentials.
+
+Backend references are Java 21 and Spring Boot 3.5.16 from the local Maven manifest, plus PostgreSQL and Flyway migrations inspected read-only. No backend runtime was started for this frontend change.
 
 ## Shared design and layout
 
@@ -47,12 +49,12 @@ The application uses hash addresses, including `#/login`, `#/foundation`, `#/hom
 
 Normal in-app links add native browser entries. App Back and Forward traverse adjacent entries recorded by the current document and role, so they cannot leave the application. Native browser navigation can traverse the browser's full history and every application entry is checked on arrival. An unfamiliar entry or an auth change starts a new range for the app controls. History metadata contains only an opaque range marker and an index. [History logic](../src/navigation/history.ts)
 
-The Home link opens the active user's role workspace. Refresh repeats the doctor or architecture health read on those pages. It is disabled on the sign-in and role landing pages, which have no refreshable data. Reloading the entire document requires the user to sign in again.
+The Home link opens the active user's role workspace. Refresh repeats the doctor and department reads, architecture health, and Administrator demo reads on those pages. It also repeats an eligible patient search. It is disabled on the sign-in and role landing pages, which have no refreshable data. Reloading the entire document requires the user to sign in again.
 
 ## Authentication, HTTP, and integration
 
 `AuthProvider` and the protected business HTTP clients share the in-memory session. Logout clears it immediately and attempts server-side invalidation. A current protected `401` returns the user to sign-in, while `403` reports the denied operation and keeps the session. [US-02](US-02-frontend.md) The application persists the theme preference and keeps authentication data in memory.
 
-Business HTTP service factories have injectable `fetch` implementations for testing. The versioned base path is `/api/v1`. Vite proxies `/api` to `http://localhost:8080` in development. Container Nginx sends that path to `backend:8080`. Authentication and the directory each select a separate mock only when Vite is in development mode and their flag is explicitly `true`. HTTP failures surface as errors. [OpenAPI contract](../../api/openapi.yaml) · [Vite proxy](../vite.config.ts) · [Nginx proxy](../nginx.conf)
+Business HTTP service factories have injectable `fetch` implementations for testing. The versioned base path is `/api/v1`. Vite proxies `/api` to `http://localhost:8080` in development. Container Nginx sends that path to `backend:8080`. Authentication, patient services, the directory and Administrator screens opt into their own development-only mocks. The two unmerged US-09 HTTP previews require separate development flags. HTTP failures surface as errors. [OpenAPI contract](../../api/openapi.yaml) · [Vite proxy](../vite.config.ts) · [Nginx proxy](../nginx.conf)
 
 Use only synthetic accounts and records. Mock and controlled HTTP results establish frontend behavior. Live authentication, token revocation, and Spring Boot/PostgreSQL verification still require their actual backend environments. Server-side authorization for the directory must also be aligned with the documented contract. [US-01](US-01-frontend.md) · [US-09](US-09-frontend.md)

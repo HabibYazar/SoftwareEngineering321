@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { syntheticTurkishNationalId } from './fixtures/turkishNationalId.mjs'
 import { createAuthorizedRequest } from '../src/auth/authorizedRequest.ts'
 import { hasPermission } from '../src/auth/permissions.ts'
 import { canAccessRoute, homePath, listWorkflowRoutes, patientEditPath, readPatientEditPath, resolvePath } from '../src/auth/routing.ts'
@@ -18,7 +19,7 @@ const token = 'synthetic-test-token'
 const missingId = '00000000-0000-4000-8000-000000000000'
 const first = () => createMockPatientStore().list()[0]
 const receive = () => ({ accessToken: token, tokenType: 'Bearer', role: 'Receptionist', expiresAt: new Date(Date.now() + 60_000).toISOString() })
-const relative = { fullName: 'Synthetic Contact', relationship: 'Sibling', phone: '0000000000' }
+const relative = { fullName: 'Synthetic Contact', relationship: 'Sibling', phone: '+905000000000' }
 
 // Gerçek depo, sentetik kayıt ve arama servislerine de ayrı ayrı verilir.
 function setup() {
@@ -71,14 +72,14 @@ test('editing every allowed field reuses validation and updates the shared searc
   const patient = store.list()[0]
   const draft = {
     ...draftFromPatient(patient), firstName: ' Synthetic ', lastName: 'Updated',
-    dateOfBirth: '2004-02-29', gender: 'Not disclosed in demo', phone: '0000000111', address: 'New synthetic address',
+    dateOfBirth: '2004-02-29', gender: 'Other', phone: '0500 000 01 11', address: 'New synthetic address',
     conditionLevel: 'ADVANCED', relativeFullName: relative.fullName,
-    relativeRelationship: relative.relationship, relativePhone: relative.phone,
+    relativeRelationship: relative.relationship, relativePhone: '0500 000 00 00',
   }
   const { payload } = validateProfile(draft, true)
   assert.deepEqual(payload, {
-    firstName: 'Synthetic', lastName: 'Updated', dateOfBirth: '2004-02-29', gender: 'Not disclosed in demo',
-    phone: '0000000111', address: 'New synthetic address', conditionLevel: 'ADVANCED', relativeInformation: relative,
+    firstName: 'Synthetic', lastName: 'Updated', dateOfBirth: '2004-02-29', gender: 'Other',
+    phone: '+905000000111', address: 'New synthetic address', conditionLevel: 'ADVANCED', relativeInformation: relative,
   })
   const updated = await profile.update(patient.id, payload, token)
   assert.deepEqual(updated, { ...payload, id: patient.id, nationalId: patient.nationalId })
@@ -89,7 +90,7 @@ test('editing every allowed field reuses validation and updates the shared searc
 
 test('registration records stay editable in the same store and their national IDs stay unique', async () => {
   const { registration, profile, search } = setup()
-  const patient = { ...first(), nationalId: '00000000992', firstName: 'Synthetic', lastName: 'Registered' }
+  const patient = { ...first(), nationalId: syntheticTurkishNationalId('100000992'), firstName: 'Synthetic', lastName: 'Registered' }
   const { id: _ignored, ...newPatient } = patient
   const registered = await registration.register(newPatient, token)
   const { payload } = validateProfile({ ...draftFromPatient(registered), lastName: 'Edited' }, false)
@@ -134,7 +135,7 @@ for (const conditionLevel of ['MILD', 'MODERATE']) {
 test('switching to Advanced requires all relative fields before saving', () => {
   const draft = { ...draftFromPatient(first()), conditionLevel: 'ADVANCED' }
   assert.deepEqual(Object.keys(validateProfile(draft, false).errors).sort(), ['relativeFullName', 'relativePhone', 'relativeRelationship'])
-  const result = validateProfile({ ...draft, relativeFullName: 'Synthetic', relativeRelationship: 'Sibling', relativePhone: '0000000000' }, false)
+  const result = validateProfile({ ...draft, relativeFullName: 'Synthetic', relativeRelationship: 'Sibling', relativePhone: '05000000000' }, false)
   assert.equal(result.payload.relativeInformation.fullName, 'Synthetic')
   assert.equal(result.payload.conditionLevel, 'ADVANCED')
 })

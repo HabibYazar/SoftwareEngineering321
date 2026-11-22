@@ -1,67 +1,85 @@
-/* Bileşenler renklerin kendisini değil, yüzey ve metin gibi rollerini kullanır.
-   Koyu tema aynı değişkenleri değiştirir; sayfa stilleri renk paletini bilmez. */
+/* Tema rolleri ortak kalır. Etkileşim metni ve dolu düğme ayrı kontrast değerleri kullanır. */
 :root {
   color-scheme: light;
-  --page: #f1ece3;
-  --surface: #fbf8f2;
-  --sidebar: #e9e3d8;
-  --surface-hover: #efe9de;
-  --text: #212d36;
-  --muted: #526068;
-  --border: #d8cfc0;
-  --control-border: #827e73;
-  --accent: #285d53;
-  --accent-hover: #1e473e;
-  --on-accent: #faf9f1;
-  --accent-soft: #ddeae1;
-  --focus: #885027;
-  --info-bg: #e9eee9;
-  --warning: #76501e;
-  --warning-bg: #f6ead4;
-  --error: #943536;
-  --error-bg: #f5e6e0;
-  --success: #33694f;
-  --shadow: 0 2px 6px #392b1810;
+  --page: #eef0f5;
+  --page-end: #eef0f5;
+  --sidebar: #f9f9fc;
+  --surface: #ffffff;
+  --inset: #f3f3f8;
+  --surface-hover: #ebeaf2;
+  --elevated: #f7f6fb;
+  --text: #242533;
+  --muted: #5b5c70;
+  --border: #d9d8e3;
+  --control-border: #858398;
+  --accent: #554779;
+  --accent-soft: #e9e5f4;
+  --action: #5b5084;
+  --action-hover: #6c6096;
+  --action-edge: #493f6b;
+  --on-action: #ffffff;
+  --accent-secondary: #584d75;
+  --focus: #615387;
+  --info-bg: #eeebf7;
+  --warning: #684617;
+  --warning-bg: #fbf1e1;
+  --error: #902f28;
+  --error-bg: #faeeeb;
+  --success: #295c43;
+  --success-bg: #eaf4ee;
+  --disabled-bg: #e9e9f0;
+  --disabled-text: #656579;
+  --shadow: 0 1px 2px #1a172009, 0 6px 20px #1a172012;
+  --shadow-raised: 0 8px 22px #231b341b;
+  --brand-deep: #ebe8f5;
+  --brand-edge: #e4e0ee;
+  --brand-art: #54467111;
 }
-
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --page: #171d26;
-  --surface: #232c37;
-  --sidebar: #1c2430;
-  --surface-hover: #303b47;
-  --text: #ede9e0;
-  --muted: #b9c3cd;
-  --border: #414c59;
-  --control-border: #8995a2;
-  --accent: #acd6c7;
-  --accent-hover: #c0e4d7;
-  --on-accent: #192d26;
-  --accent-soft: #2d463f;
-  --focus: #efc08c;
-  --info-bg: #2b3a43;
-  --warning: #f0c588;
-  --warning-bg: #423629;
-  --error: #ffb3af;
-  --error-bg: #432f35;
-  --success: #a2d6b3;
-  --shadow: 0 2px 6px #070c1540;
+  --page: #090a10;
+  --page-end: #0e1019;
+  --sidebar: #11131d;
+  --surface: #191a25;
+  --inset: #13141e;
+  --surface-hover: #211f2d;
+  --elevated: #211f2d;
+  --text: #f0eff5;
+  --muted: #a6a5b5;
+  --border: #302f40;
+  --control-border: #77758b;
+  --accent: #c7bddf;
+  --accent-soft: #39354f;
+  --action: #675f94;
+  --action-hover: #766c9e;
+  --action-edge: #9b91bc;
+  --on-action: #ffffff;
+  --accent-secondary: #c2b7d7;
+  --focus: #c5badf;
+  --info-bg: #26243a;
+  --warning: #e5c38d;
+  --warning-bg: #332a21;
+  --error: #efb4ae;
+  --error-bg: #382523;
+  --success: #a7c7ae;
+  --success-bg: #202d28;
+  --disabled-bg: #23232f;
+  --disabled-text: #9392a5;
+  --shadow: 0 1px 2px #0003, 0 8px 22px #0003;
+  --shadow-raised: 0 10px 28px #0005;
+  --brand-deep: #161621;
+  --brand-edge: #201e2e;
+  --brand-art: #d1c5e511;
 }
-
-/* Boşluk, köşe ve hareket ölçekleri her tema için aynıdır. */
 :root {
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.25rem;
-  --space-6: 1.5rem;
-  --space-8: 2rem;
-  --radius: 0.875rem;
-  --control-radius: 0.625rem;
-  --motion: 150ms ease-out;
+  --space-1: 0.25rem; --space-2: 0.5rem; --space-3: 0.75rem; --space-4: 1rem;
+  --space-5: 1.25rem; --space-6: 1.5rem; --space-8: 2rem;
+  --radius: 1rem;
+  --card-padding: clamp(1rem, 2.6vw, 1.75rem);
+  --control-height: 2.75rem;
+  --control-radius: 0.7rem;
+  --motion: 170ms ease-out;
 }
-
 @media (prefers-reduced-motion: reduce) {
   :root { --motion: 0ms; }
 }

@@ -1,9 +1,9 @@
-import { createContext, useContext, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import type { AuthSession } from './session'
 import type { AuthService, LoginRequest, Role } from './types'
 
 type AuthContextValue = {
-  role: Role | null; busy: boolean; notice: string
+  role: Role | null; sessionMarker: object | null; busy: boolean; notice: string
   login(credentials: LoginRequest): Promise<void>
   logout(): Promise<void>
   getAccessToken(): string | null
@@ -17,6 +17,8 @@ export function AuthProvider({ service, session, children }: {
 }) {
   const snapshot = useSyncExternalStore(session.subscribe, session.getSnapshot)
   const { session: active, notice } = snapshot
+  // Geçici ekran verilerini belirteci paylaşmadan belirli bir girişe bağlarız.
+  const sessionMarker = useMemo(() => active ? {} : null, [active])
   const inFlight = useRef(false)
   const [busy, setBusy] = useState(false)
 
@@ -60,7 +62,7 @@ export function AuthProvider({ service, session, children }: {
   }
 
   return <AuthContext.Provider value={{
-    role: active?.role ?? null, busy, notice, login, logout, getAccessToken: session.getAccessToken,
+    role: active?.role ?? null, sessionMarker, busy, notice, login, logout, getAccessToken: session.getAccessToken,
   }}>{children}</AuthContext.Provider>
 }
 

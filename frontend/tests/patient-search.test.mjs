@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
+import { syntheticTurkishNationalId } from './fixtures/turkishNationalId.mjs'
 import { canSearchPatients, homePath, patientSearchPath, registrationPath, resolvePath } from '../src/auth/routing.ts'
 import { roles } from '../src/auth/types.ts'
 import { createAppHistory } from '../src/navigation/history.ts'
@@ -63,7 +64,7 @@ test('a synthetic registration is searchable when both demo services share a sto
   const { store, service } = makeMock()
   const register = createMockRegistrationService(0, store)
   const { id: _fixtureId, ...patient } = store.list()[0]
-  const created = await register.register({ ...patient, firstName: 'Searchable', nationalId: '00000000044' }, token)
+  const created = await register.register({ ...patient, firstName: 'Searchable', nationalId: syntheticTurkishNationalId('100000044') }, token)
   assert.deepEqual(await service.search({ mode: 'nationalId', value: created.nationalId }, token), [created])
   assert.equal((await service.search({ mode: 'name', value: 'Searchable De' }, token)).length, 1)
 })

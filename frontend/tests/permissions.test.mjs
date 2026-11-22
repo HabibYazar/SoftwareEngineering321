@@ -12,14 +12,15 @@ import { createHttpStaffService } from '../src/staff/httpStaffService.ts'
 const doctor = '/doctors'
 const register = '/patients/register'
 const search = '/patients/search'
-const workflows = [doctor, register, search]
-const permissions = ['viewDoctors', 'registerPatients', 'searchPatients']
+const adminRoutes = ['/admin/audit-logs', '/admin/staff']
+const workflows = [doctor, register, search, ...adminRoutes]
+const permissions = ['viewDoctors', 'registerPatients', 'searchPatients', 'viewAuditLogs', 'manageDemoStaff']
 const demo = role => ({ role, tokenType: 'Bearer', accessToken: 'synthetic-test-token', expiresAt: new Date(Date.now() + 60_000).toISOString() })
 
 // Beklentiler rota kataloğundan türetilmez. İstemeden genişleyen izinler bu testte görünür.
 for (const role of roles) {
   test(role + ' only sees and opens documented workflows and its own home', () => {
-    const expected = { Receptionist: workflows, Administrator: [register, search] }[role] ?? []
+    const expected = { Receptionist: [doctor, register, search], Administrator: [register, search, ...adminRoutes] }[role] ?? []
     assert.deepEqual(listWorkflowRoutes(role).map(route => route.path), expected)
     for (const [index, path] of workflows.entries()) {
       const allowed = expected.includes(path)

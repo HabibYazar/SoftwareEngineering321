@@ -1,3 +1,4 @@
+import { patientPhoneMessage } from './formOptions.ts'
 import { readApiProblem } from '../apiProblem.ts'
 import { earliestPatientBirthDate, fieldLimits, type RegistrationErrors, type RegistrationField } from './validation.ts'
 
@@ -41,7 +42,7 @@ function fieldMessage(field: RegistrationField, code: string): string {
   }
   if (field === 'nationalId') return code === 'Immutable'
     ? 'The national ID cannot be changed.' : 'Enter a synthetic national ID with exactly 11 digits.'
-  if (field === 'phone' || field === 'relativePhone') return 'Enter a valid phone number with 7 to 31 characters, optionally prefixed by +.'
+  if (field === 'phone' || field === 'relativePhone') return patientPhoneMessage
   if (field === 'conditionLevel') return 'Choose a condition level.'
   return 'Check the value for this field.'
 }
