@@ -16,7 +16,7 @@ public class StaffController {
     }
 
     @GetMapping("/api/v1/staff")
-    public List<StaffRepository.Clinician> listClinicians(@RequestParam(required = false) String department) {
-        return staffService.getClinicians(department);
+    public List<StaffRepository.Doctor> listDoctors(@RequestParam(required = false) String department) {
+        return staffService.getDoctors(department);
     }
 }

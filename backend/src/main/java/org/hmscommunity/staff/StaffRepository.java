@@ -18,7 +18,7 @@ public class StaffRepository {
         this.jdbcClient = jdbcClientProvider.getIfAvailable();
     }
 
-    public List<Clinician> findClinicians(String department) {
+    public List<Doctor> findDoctors(String department) {
         if (jdbcClient == null) {
             throw new ResponseStatusException(
                     HttpStatus.SERVICE_UNAVAILABLE,
@@ -28,12 +28,12 @@ public class StaffRepository {
         if (department != null && !department.isBlank()) {
             return jdbcClient.sql("""
                     SELECT id, display_name, department
-                    FROM clinicians
+                    FROM doctors
                     WHERE department = ?
-                    ORDER BY row_num ASC
+                    ORDER BY display_name ASC
                     """)
                     .param(department)
-                    .query((rs, rowNum) -> new Clinician(
+                    .query((rs, rowNum) -> new Doctor(
                             rs.getObject("id", UUID.class),
                             rs.getString("display_name"),
                             rs.getString("department")
@@ -43,10 +43,10 @@ public class StaffRepository {
 
         return jdbcClient.sql("""
                 SELECT id, display_name, department
-                FROM clinicians
-                ORDER BY row_num ASC
+                FROM doctors
+                ORDER BY display_name ASC
                 """)
-                .query((rs, rowNum) -> new Clinician(
+                .query((rs, rowNum) -> new Doctor(
                         rs.getObject("id", UUID.class),
                         rs.getString("display_name"),
                         rs.getString("department")
@@ -54,5 +54,5 @@ public class StaffRepository {
                 .list();
     }
 
-    public record Clinician(UUID id, String displayName, String department) {}
+    public record Doctor(UUID id, String displayName, String department) {}
 }
