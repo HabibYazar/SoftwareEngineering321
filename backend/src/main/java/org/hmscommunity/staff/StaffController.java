@@ -1,11 +1,14 @@
 package org.hmscommunity.staff;
 
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-
+/**
+ * US-09 (#204): {@code GET /api/v1/staff?department=...}. Erişim güvenlik zincirinde
+ * {@code DOCTOR_DIRECTORY_VIEW} iznine bağlıdır (US-02).
+ */
 @RestController
 public class StaffController {
 

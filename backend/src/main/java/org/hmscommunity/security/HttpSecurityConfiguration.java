@@ -41,8 +41,6 @@ public class HttpSecurityConfiguration {
                 // Hata yönlendirmesinin (ERROR dispatch) gerçek durum kodunu koruması için izin verilir.
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/api/v1/health").permitAll()
-                .requestMatchers("/api/v1/staff").permitAll()
-                .requestMatchers("/api/v1/departments").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").authenticated()
                 // US-02: izinler her istekte oturumla birlikte veritabanından okunur (bkz. Permission).
@@ -50,6 +48,9 @@ public class HttpSecurityConfiguration {
                 .requestMatchers(HttpMethod.GET, "/api/v1/patients").hasAuthority(Permission.PATIENT_VIEW.authority())
                 .requestMatchers(HttpMethod.GET, "/api/v1/patients/*").hasAuthority(Permission.PATIENT_VIEW.authority())
                 .requestMatchers(HttpMethod.PUT, "/api/v1/patients/*").hasAuthority(Permission.PATIENT_UPDATE.authority())
+                // US-09: doktor dizini ve departman listesi anonim değildir (SRS FR-09.10).
+                .requestMatchers(HttpMethod.GET, "/api/v1/staff", "/api/v1/departments")
+                    .hasAuthority(Permission.DOCTOR_DIRECTORY_VIEW.authority())
                 // Açıkça tanımlanmamış her yol reddedilir (varsayılan olarak kapalı):
                 // anonim istek 401, kimliği doğrulanmış istek 403 alır.
                 .anyRequest().denyAll())

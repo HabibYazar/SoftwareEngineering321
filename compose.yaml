@@ -6,9 +6,10 @@ services:
       POSTGRES_USER: ${HMS_DB_USER:-hms}
       POSTGRES_PASSWORD: ${HMS_DB_PASSWORD:-local_demo_only_change_me}
       POSTGRES_DB: ${HMS_DB_NAME:-hms_community}
+    # Şema yalnızca backend'in Flyway migration'larıyla kurulur; initdb betiği bağlanmaz
+    # (ayrı bir initdb şeması Flyway V1 ile çakışır). Veritabanı ana makineye port açmaz (NFR-04).
     volumes:
       - hms_postgres:/var/lib/postgresql/data
-      - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
@@ -18,22 +19,40 @@ services:
 
   backend:
     build: ./backend
+    # Yalnızca bu makineden erişilebilir (Vite geliştirme sunucusunun /api vekili için).
+    # 8080 doluysa .env içinde HMS_BACKEND_PORT ile başka bir port seçilir.
     ports:
-      - "8080:8080"
+      - "127.0.0.1:${HMS_BACKEND_PORT:-8080}:8080"
     environment:
       HMS_DB_URL: jdbc:postgresql://db:5432/${HMS_DB_NAME:-hms_community}
       HMS_DB_USER: ${HMS_DB_USER:-hms}
       HMS_DB_PASSWORD: ${HMS_DB_PASSWORD:-local_demo_only_change_me}
+      # Yerel demoda şemaya ek olarak sentetik US-09 doktor/departman verisi yüklenir (yinelenmez).
+      HMS_FLYWAY_LOCATIONS: classpath:db/migration,classpath:db/seed
+      # İlk yönetici yalnızca ikisi de .env içinde verilirse ve hiç yönetici yoksa oluşturulur.
+      HMS_BOOTSTRAP_ADMIN_USERNAME: ${HMS_BOOTSTRAP_ADMIN_USERNAME:-}
+      HMS_BOOTSTRAP_ADMIN_PASSWORD: ${HMS_BOOTSTRAP_ADMIN_PASSWORD:-}
     depends_on:
       db:
         condition: service_healthy
+    # Sağlık kontrolü imajda ek araç gerektirmez; açık sağlık uç noktası "UP" dönene kadar bekler.
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /api/v1/health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && grep -q UP <&3"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
     networks: [internal]
 
   frontend:
     build: ./frontend
+    # NFR-02: http://localhost:80. Port doluysa .env içinde HMS_HTTP_PORT ile değiştirilir.
     ports:
-      - "80:80"
-    depends_on: [backend]
+      - "127.0.0.1:${HMS_HTTP_PORT:-80}:80"
+    # Nginx, backend sağlıklı olduktan sonra başlar; ayrıca backend adını istek anında çözer.
+    depends_on:
+      backend:
+        condition: service_healthy
     networks: [internal]
 
 networks:

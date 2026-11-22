@@ -1,14 +1,11 @@
 package org.hmscommunity.departments;
 
-import org.hmscommunity.departments.DepartmentsRepository.Department;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
 import java.util.List;
+import org.hmscommunity.departments.DepartmentsRepository.Department;
+import org.springframework.stereotype.Service;
 
-@RestController
-@RequestMapping("/departments")
+/** US-09: doktor dizinindeki departman seçeneklerini sağlar. */
+@Service
 public class DepartmentsService {
 
     private final DepartmentsRepository departmentsRepository;
@@ -17,7 +14,6 @@ public class DepartmentsService {
         this.departmentsRepository = departmentsRepository;
     }
 
-    @GetMapping
     public List<Department> getDepartments() {
         return departmentsRepository.findDepartments();
     }

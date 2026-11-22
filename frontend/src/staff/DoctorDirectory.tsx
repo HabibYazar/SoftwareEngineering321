@@ -82,7 +82,7 @@ export function DoctorDirectory({ directory, refreshVersion }: { directory: Dire
       <p className="muted">Browse doctors by department or search by name.</p>
     </div>
     {modes.staff === 'mock' && <Alert tone="warning">Demo directory. All doctor names are synthetic.</Alert>}
-    {(modes.staff === 'http' || modes.departments) && <Alert tone="warning">
+    {modes.preview && <Alert tone="warning">
       Development HTTP preview. Endpoint availability depends on the local backend.
       {modes.departments === 'pr251' && ' The temporary PR #251 response adapter is enabled.'}
     </Alert>}

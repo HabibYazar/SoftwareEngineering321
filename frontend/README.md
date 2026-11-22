@@ -43,13 +43,13 @@ The sign-in fixtures share the synthetic password `DemoOnly!321`. Demo staff-man
 
 With mock flags off, authentication and patient workflows use the merged versioned contracts through the existing `/api` proxy when a compatible backend is available. Search requires a national ID or name. The recent patient list contains only records registered in the current session. The server does not offer full patient listing.
 
-To prepare US-09 against a compatible local development backend, disable `VITE_STAFF_MOCK` and enable the preview flags you need.
+Production builds (`npm run build`, Docker/Nginx) always use the merged US-09 contracts `GET /api/v1/staff` and `GET /api/v1/departments` (`{ id, name }`). The backend reads them from PostgreSQL and requires the `DOCTOR_DIRECTORY_VIEW` permission (Receptionist; Administrator holds every permission). In `npm run dev` the directory stays offline unless you disable `VITE_STAFF_MOCK` and enable the flags you need:
 
-- `VITE_STAFF_HTTP_PREVIEW=true` enables the unmerged staff GET contract from PR #229.
-- `VITE_DEPARTMENTS_HTTP_PREVIEW=true` enables the unmerged department GET contract from PR #251 and expects `{ id, name }`.
-- `VITE_DEPARTMENTS_PR251_COMPAT=true` works only with the department preview flag. It explicitly selects the temporary `{ id, department }` adapter for PR #251.
+- `VITE_STAFF_HTTP_PREVIEW=true` uses the staff GET contract.
+- `VITE_DEPARTMENTS_HTTP_PREVIEW=true` uses the department GET contract and expects `{ id, name }`.
+- `VITE_DEPARTMENTS_PR251_COMPAT=true` (DEV only, with the department flag) keeps the legacy `{ id, department }` adapter for old local backends; the current backend returns `{ id, name }`.
 
-An HTTP failure stays in HTTP mode and never enables mock data. These previews are disabled for production. The PRs still require schema, response and authorization alignment. Audit listing and staff account management have no approved HTTP endpoints. [Backend integration and blockers](docs/backend-integration/README.md)
+An HTTP failure stays in HTTP mode and never enables mock data. Audit listing and staff account management have no approved HTTP endpoints. [Backend integration and blockers](docs/backend-integration/README.md)
 
 ## Verification
 

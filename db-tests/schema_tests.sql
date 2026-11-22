@@ -138,8 +138,8 @@ SELECT hms_test.ok('US-02', (SELECT count(*) FROM role_permissions rp JOIN roles
                    'Administrator holds every catalogued permission');
 SELECT hms_test.ok('US-08', (SELECT string_agg(p.code, ',' ORDER BY p.code) FROM role_permissions rp
                              JOIN roles r ON r.id = rp.role_id JOIN permissions p ON p.id = rp.permission_id
-                             WHERE r.code = 'Receptionist') = 'PATIENT_CREATE,PATIENT_UPDATE,PATIENT_VIEW',
-                   'Receptionist may register, view and update patients');
+                             WHERE r.code = 'Receptionist') = 'DOCTOR_DIRECTORY_VIEW,PATIENT_CREATE,PATIENT_UPDATE,PATIENT_VIEW',
+                   'Receptionist may register, view and update patients and view the doctor directory (V4)');
 
 -- ============================================================================
 -- B. Accounts, roles and administration (US-01, US-05)

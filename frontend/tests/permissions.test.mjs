@@ -20,7 +20,7 @@ const demo = role => ({ role, tokenType: 'Bearer', accessToken: 'synthetic-test-
 // Beklentiler rota kataloğundan türetilmez. İstemeden genişleyen izinler bu testte görünür.
 for (const role of roles) {
   test(role + ' only sees and opens documented workflows and its own home', () => {
-    const expected = { Receptionist: [doctor, register, search], Administrator: [register, search, ...adminRoutes] }[role] ?? []
+    const expected = { Receptionist: [doctor, register, search], Administrator: [doctor, register, search, ...adminRoutes] }[role] ?? []
     assert.deepEqual(listWorkflowRoutes(role).map(route => route.path), expected)
     for (const [index, path] of workflows.entries()) {
       const allowed = expected.includes(path)

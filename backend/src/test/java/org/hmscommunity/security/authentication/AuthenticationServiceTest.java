@@ -77,6 +77,17 @@ class AuthenticationServiceTest {
             .isInstanceOf(InvalidCredentialsException.class);
     }
 
+    /** API 128 karaktere izin verir; BCrypt'in 72 bayt sınırını aşan parola 500 değil genel 401 almalıdır. */
+    @Test
+    void passwordLongerThanTheBcryptLimitIsAnOrdinaryWrongPassword() {
+        String username = SyntheticStaff.username(StaffRole.NURSE);
+
+        assertThatThrownBy(() -> service.login(username, "p".repeat(100)))
+            .isInstanceOf(InvalidCredentialsException.class);
+        assertThatThrownBy(() -> service.login("nobody", "p".repeat(100)))
+            .isInstanceOf(InvalidCredentialsException.class);
+    }
+
     @Test
     void logoutRevokesTheSession() {
         IssuedAccessToken token = service.login(SyntheticStaff.username(StaffRole.PHYSICIAN), SyntheticStaff.PASSWORD);

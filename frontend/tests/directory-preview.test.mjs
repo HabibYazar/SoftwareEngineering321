@@ -12,13 +12,15 @@ const cardio = { id: '00000000-0000-0000-0000-00000000001a', name: 'Cardiology' 
 const clinician = { id: '00000000-0000-0000-0000-000000000020', displayName: 'Dr. Synthetic', department: cardio.name }
 const html = '<h1>Private server details</h1>'
 
-test('the directory requires explicit DEV flags, gives mock priority and selects the adapter independently', () => {
+// Üretim derlemesi bayraklardan bağımsız olarak gerçek uç noktaları kullanır; demo ve geçici adaptör yalnızca DEV'dedir.
+test('production always uses the real endpoints while DEV keeps explicit, independent flags', () => {
   const input = { VITE_STAFF_MOCK: 'true', VITE_STAFF_HTTP_PREVIEW: 'true', VITE_DEPARTMENTS_HTTP_PREVIEW: 'true', VITE_DEPARTMENTS_PR251_COMPAT: 'true' }
-  assert.deepEqual(directoryModes(input), { staff: 'unavailable', departments: null })
-  assert.deepEqual(directoryModes({ ...input, DEV: true }), { staff: 'mock', departments: null })
-  assert.deepEqual(directoryModes({ ...input, DEV: true, VITE_STAFF_MOCK: 'false' }), { staff: 'http', departments: 'pr251' })
-  assert.deepEqual(directoryModes({ DEV: true, VITE_DEPARTMENTS_HTTP_PREVIEW: 'true' }), { staff: 'unavailable', departments: 'canonical' })
-  assert.deepEqual(directoryModes({ DEV: true, VITE_DEPARTMENTS_PR251_COMPAT: 'true' }), { staff: 'unavailable', departments: null })
+  assert.deepEqual(directoryModes(input), { staff: 'http', departments: 'canonical', preview: false })
+  assert.deepEqual(directoryModes({}), { staff: 'http', departments: 'canonical', preview: false })
+  assert.deepEqual(directoryModes({ ...input, DEV: true }), { staff: 'mock', departments: null, preview: false })
+  assert.deepEqual(directoryModes({ ...input, DEV: true, VITE_STAFF_MOCK: 'false' }), { staff: 'http', departments: 'pr251', preview: true })
+  assert.deepEqual(directoryModes({ DEV: true, VITE_DEPARTMENTS_HTTP_PREVIEW: 'true' }), { staff: 'unavailable', departments: 'canonical', preview: true })
+  assert.deepEqual(directoryModes({ DEV: true, VITE_DEPARTMENTS_PR251_COMPAT: 'true' }), { staff: 'unavailable', departments: null, preview: false })
 })
 
 test('the canonical department client validates UUIDs and unique names and accepts empty arrays', async () => {
