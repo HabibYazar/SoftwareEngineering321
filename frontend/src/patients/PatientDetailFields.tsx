@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react'
 import { TextField } from '../components/ui'
-import { editTurkishMobile, genderOptions, isSupportedGender } from './formOptions'
+import { editTurkishMobile, genderOptions, isSupportedGender, patientPhoneHint } from './formOptions'
 import { earliestPatientBirthDate, fieldLimits, type PatientDetailsDraft, type PatientDetailsErrors, type PatientDetailsField } from './validation'
 import './registration.css'
 
@@ -25,13 +25,10 @@ function PatientPhoneField({ prefix, draft, errors, onChange, onBlur, field, lab
   function applyEdit(input: HTMLInputElement, raw: string, caret: number, inputType?: string) {
     const edit = editTurkishMobile(previous, raw, caret, inputType)
     if ('error' in edit) {
-      // Geçersiz yapıştırma mevcut değer ve seçimle kalır. Fazla hane kesilmez.
-      if (input.value !== previous) {
-        const position = Math.max(0, caret - Math.max(0, raw.length - previous.length))
-        input.value = previous
-        input.setSelectionRange(position, position)
-      }
+      if (input.value !== raw) input.value = raw
+      input.setSelectionRange(caret, caret)
       setInputError(edit.error)
+      onChange(field, raw)
       return
     }
     if (input.value !== edit.value) input.value = edit.value
@@ -43,7 +40,7 @@ function PatientPhoneField({ prefix, draft, errors, onChange, onBlur, field, lab
   }
 
   return <TextField id={prefix + '-' + field} name={field} label={label}
-    type="tel" inputMode="tel" placeholder="0500 000 00 00" required
+    type="tel" inputMode="tel" placeholder="0500 000 00 00" hint={patientPhoneHint} required
     value={previous} error={inputError ?? errors[field]} onBlur={() => onBlur(field)}
     onPaste={event => {
       event.preventDefault()

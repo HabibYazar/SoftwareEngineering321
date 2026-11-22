@@ -121,7 +121,7 @@ export function PatientRegistrationPage({ service, onDirtyChange, onRegistered }
       <form ref={form} className="registration-form" autoComplete="off" onSubmit={submit} noValidate aria-busy={saving}>
         {/* Uzun yapıştırmaları kesmeyiz. Kullanıcı, tüm girdiyi görüp hane hatasını düzeltebilir. */}
         <PatientDetailFields {...fields} identity={<TextField id="registration-nationalId"
-          name="nationalId" label="Synthetic national ID" inputMode="numeric"
+          name="nationalId" label="T.C. Kimlik No" hint="Enter all 11 digits." inputMode="numeric"
           required value={draft.nationalId} error={errors.nationalId} onBlur={() => fieldsFeedback.touch('nationalId')}
           onChange={event => update('nationalId', event.target.value)} />} />
         {!advanced && <label className="registration-checkbox">

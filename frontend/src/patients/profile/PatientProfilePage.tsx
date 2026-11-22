@@ -55,6 +55,7 @@ export function PatientProfilePage({ patientId, ...props }: ProfileProps & { pat
   return <section className="intro registration patient-profile" aria-labelledby="page-title">
     <div className="page-heading">
       <h1 id="page-title" tabIndex={-1}>Edit patient profile</h1>
+      {record.status === 'ready' && <p className="muted">{record.patient.firstName} {record.patient.lastName}</p>}
     </div>
     {patientProfileMockEnabled && <Alert tone="warning">Demo profile editing is active. Records are synthetic and temporary.</Alert>}
     {!service.canUpdate && <Alert tone="warning">{new PatientProfileError('unavailable').message}</Alert>}
@@ -149,7 +150,7 @@ function ProfileForm({ initial, service, onDirtyChange, onSaved }: ProfileProps 
     </div>}
     <form ref={form} className="registration-form" autoComplete="off" noValidate onSubmit={submit} aria-busy={saving}>
       <PatientDetailFields {...fields} identity={<dl className="profile-identity">
-        <dt>Synthetic national ID (read only)</dt>
+        <dt>T.C. Kimlik No (read only)</dt>
         <dd>{patient.nationalId}</dd>
       </dl>} />
       {/* Mevcut yakın yalnızca açıkça kaldırma seçilirse güncellemeden çıkarılır. */}
