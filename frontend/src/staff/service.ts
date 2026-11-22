@@ -15,7 +15,8 @@ const unavailable: StaffService = {
   },
 }
 
-// İki HTTP bayrağı bağımsızdır. Üretimde hazırlık uç noktalarına istek atılmaz.
+// DEV'de iki HTTP bayrağı bağımsızdır. Üretimde demo ve geçici adaptör modülleri derlemeye girmez;
+// yalnızca kanonik GET /api/v1/staff ve GET /api/v1/departments sözleşmeleri kullanılır.
 export async function createDirectoryServices(request: typeof fetch): Promise<DirectoryServices> {
   const modes = directoryModes(import.meta.env)
   if (import.meta.env.DEV) {
@@ -33,5 +34,8 @@ export async function createDirectoryServices(request: typeof fetch): Promise<Di
     }
     return { doctors, departments, modes }
   }
-  return { doctors: unavailable, departments: null, modes }
+  const [{ createHttpStaffService }, { createHttpDepartmentService }] = await Promise.all([
+    import('./httpStaffService'), import('./httpDepartmentService'),
+  ])
+  return { doctors: createHttpStaffService(request), departments: createHttpDepartmentService(request), modes }
 }

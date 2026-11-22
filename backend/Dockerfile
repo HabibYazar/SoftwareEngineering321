@@ -1,12 +1,14 @@
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /work
-#layer caching
+# Katman önbelleği: bağımlılıklar yalnızca pom.xml değişince yeniden indirilir.
 COPY pom.xml .
 RUN mvn -B -ntp dependency:go-offline
 COPY src ./src
-RUN mvn -B -ntp -Dmaven.test.failure.ignore=true package
+# Testler CI'da (mvn clean verify) çalışır. İmaj derlemesi test hatalarını gizlemez:
+# hatalar yok sayılmaz, testler burada hiç çalıştırılmaz.
+RUN mvn -B -ntp -DskipTests package
 
-#lighter runtime 
+# Daha hafif çalışma imajı; uygulama root olmayan kullanıcıyla çalışır (NFR-04).
 FROM eclipse-temurin:21-jre
 WORKDIR /app
 RUN useradd -r -u 10001 appuser

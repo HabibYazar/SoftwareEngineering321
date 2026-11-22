@@ -47,6 +47,7 @@ public abstract class PostgresIntegrationTest {
         registry.add("spring.datasource.password", () -> database().appPassword());
         registry.add("spring.flyway.user", () -> database().adminUser());
         registry.add("spring.flyway.password", () -> database().adminPassword());
+        registry.add("spring.flyway.locations", () -> String.join(",", PostgresTestDatabase.MIGRATION_AND_SEED_LOCATIONS));
     }
 
     protected static PostgresTestDatabase database() {

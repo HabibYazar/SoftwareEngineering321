@@ -87,10 +87,12 @@ test('the demo staff service filters synthetic records by department', async () 
   assert.deepEqual(await service.listClinicians('Unknown'), [])
 })
 
-test('only Receptionist may open the doctor directory', () => {
+// V4 DOCTOR_DIRECTORY_VIEW: Receptionist'e verilir, Administrator veritabanında her izne sahiptir.
+test('only Receptionist and Administrator may open the doctor directory', () => {
   assert.equal(resolvePath(doctorsPath, null), '/login')
   for (const role of roles) {
-    assert.equal(canViewDoctors(role), role === 'Receptionist')
-    assert.equal(resolvePath(doctorsPath, role), role === 'Receptionist' ? doctorsPath : homePath(role))
+    const allowed = role === 'Receptionist' || role === 'Administrator'
+    assert.equal(canViewDoctors(role), allowed)
+    assert.equal(resolvePath(doctorsPath, role), allowed ? doctorsPath : homePath(role))
   }
 })

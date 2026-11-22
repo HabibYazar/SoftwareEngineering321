@@ -1,11 +1,13 @@
 package org.hmscommunity.departments;
 
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
-import java.util.UUID;
 import java.util.List;
-import java.util.stream.IntStream;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+/**
+ * US-09 (#204): {@code GET /api/v1/departments}. Erişim güvenlik zincirinde
+ * {@code DOCTOR_DIRECTORY_VIEW} iznine bağlıdır (US-02).
+ */
 @RestController
 public class DepartmentsController {
 
@@ -17,10 +19,6 @@ public class DepartmentsController {
 
     @GetMapping("/api/v1/departments")
     public List<DepartmentsRepository.Department> listDepartments() {
-        List<DepartmentsRepository.Department> departments = IntStream.range(0, 10)
-                .mapToObj(i -> new DepartmentsRepository.Department(UUID.randomUUID(), "Department_Test_" + (i + 1)))
-                .toList();
-        return departments;
+        return departmentsService.getDepartments();
     }
-
 }

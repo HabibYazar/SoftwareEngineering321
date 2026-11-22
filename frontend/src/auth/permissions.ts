@@ -3,9 +3,10 @@ import type { Role } from './types.ts'
 // PostgreSQL V3 ve has_permission, bu iki role hasta kayıt, görüntüleme ve güncelleme izni verir.
 const patientRoles: readonly Role[] = ['Administrator', 'Receptionist']
 
-// Yönetim demoları yalnızca Administrator içindir. Doktor dizininin erişimi aynı kalır.
+// Yönetim demoları yalnızca Administrator içindir. Doktor dizini V4'teki DOCTOR_DIRECTORY_VIEW iznini izler:
+// Receptionist'e verilmiştir, Administrator veritabanında her izne sahiptir.
 const allowedRoles = {
-  viewDoctors: ['Receptionist'],
+  viewDoctors: patientRoles,
   registerPatients: patientRoles,
   searchPatients: patientRoles,
   editPatients: patientRoles,
