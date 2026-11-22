@@ -8,14 +8,18 @@ services:
       POSTGRES_DB: ${HMS_DB_NAME:-hms_community}
     volumes:
       - hms_postgres:/var/lib/postgresql/data
+      - ./db/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 15
     networks: [internal]
+
   backend:
     build: ./backend
+    ports:
+      - "8080:8080"
     environment:
       HMS_DB_URL: jdbc:postgresql://db:5432/${HMS_DB_NAME:-hms_community}
       HMS_DB_USER: ${HMS_DB_USER:-hms}
@@ -24,14 +28,17 @@ services:
       db:
         condition: service_healthy
     networks: [internal]
+
   frontend:
     build: ./frontend
     ports:
-      - "127.0.0.1:8080:80"
+      - "80:80"
     depends_on: [backend]
     networks: [internal]
+
 networks:
   internal:
     driver: bridge
+
 volumes:
   hms_postgres:
