@@ -17,9 +17,7 @@ public class DepartmentsController {
 
     @GetMapping("/api/v1/departments")
     public List<DepartmentsRepository.Department> listDepartments() {
-        List<DepartmentsRepository.Department> departments = IntStream.range(0, 10)
-                .mapToObj(i -> new DepartmentsRepository.Department(UUID.randomUUID(), "Department_Test_" + (i + 1)))
-                .toList();
+        List<DepartmentsRepository.Department> departments = departmentsService.getDepartments();
         return departments;
     }
 
