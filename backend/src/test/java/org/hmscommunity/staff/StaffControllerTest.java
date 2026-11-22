@@ -36,8 +36,8 @@ class StaffControllerTest {
 
     @Test
     void listCliniciansWithoutFilter() throws Exception {
-        when(staffService.getClinicians(null)).thenReturn(List.of(
-                new StaffRepository.Clinician(
+        when(staffService.getDoctors(null)).thenReturn(List.of(
+                new StaffRepository.Doctor(
                         UUID.fromString("21e2a9c9-04a7-51cd-bb50-8652e2278c37"),
                         "Doç. Dr. Ayşe ÖZDEMİR",
                         "Kardiyoloji"
@@ -52,8 +52,8 @@ class StaffControllerTest {
 
     @Test
     void listCliniciansFilteredByDepartment() throws Exception {
-        when(staffService.getClinicians("Kardiyoloji")).thenReturn(List.of(
-                new StaffRepository.Clinician(
+        when(staffService.getDoctors("Kardiyoloji")).thenReturn(List.of(
+                new StaffRepository.Doctor(
                         UUID.fromString("21e2a9c9-04a7-51cd-bb50-8652e2278c37"),
                         "Doç. Dr. Ayşe ÖZDEMİR",
                         "Kardiyoloji"
