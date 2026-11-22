@@ -41,6 +41,7 @@ public class HttpSecurityConfiguration {
                 // Hata yönlendirmesinin (ERROR dispatch) gerçek durum kodunu koruması için izin verilir.
                 .dispatcherTypeMatchers(DispatcherType.ERROR).permitAll()
                 .requestMatchers("/api/v1/health").permitAll()
+                .requestMatchers("/api/v1/staff").permitAll()
                 .requestMatchers("/api/v1/departments").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout").authenticated()
