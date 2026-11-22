@@ -2,10 +2,11 @@ FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /work
 #layer caching
 COPY pom.xml .
-RUN mvn -B -ntp dependency:go-offline
+COPY --from=api openapi.yaml /api/openapi.yaml
 COPY src ./src
-RUN mvn -B -ntp -Dmaven.test.failure.ignore=true package
-
+# Persistent Maven local repository across builds (Avoid re-downloading the dependency tree every time)
+RUN --mount=type=cache,target=/root/.m2 \
+    mvn -B -ntp package
 #lighter runtime 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
