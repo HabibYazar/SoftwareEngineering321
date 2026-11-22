@@ -1,0 +1,128 @@
+# Additions for api/openapi.yaml (ADR-0004: contract and implementation change together).
+# Merge the paths and components below into the existing document.
+#
+# Where the administrator enters the deletion reason:
+#   UI       a required multi-line text field "Silme nedeni" in the delete dialog
+#   API      request body field `deleteReason` (DeletionRequest) of the DELETE operations below;
+#            the same name appears as `field` in the HV001 error when it is blank or too long
+#   Backend  SELECT patient_delete(:patientId, :deleteReason)  /  staff_delete(...)  /  user_account_delete(...)
+#   Database stored in record_deletions.reason (+ the RECORD_DELETE / ACCOUNT_DELETED audit event)
+paths:
+  /patients/{patientId}:
+    delete:
+      tags: [Patients]
+      operationId: deletePatient
+      summary: Delete a patient completely, with a reason (administrator only)
+      description: |
+        Removes the patient and the relative information at any time, whatever the
+        condition level. The reason is mandatory and is stored in record_deletions
+        and in the audit log; the deleted values are not copied into the log.
+        Maps to SELECT patient_delete(:patientId, :deleteReason).
+      parameters:
+        - $ref: '#/components/parameters/patientId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeletionRequest' }
+            example:
+              deleteReason: Kayıt aynı hasta için yanlışlıkla ikinci kez açılmış.
+      responses:
+        '204': { description: Patient and relative information deleted }
+        '400':
+          description: Reason missing or longer than 1000 characters (SQLSTATE HV001, field deleteReason)
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /staff/{staffMemberId}:
+    delete:
+      tags: [Staff]
+      operationId: deleteStaffMember
+      summary: Delete a staff member with account, sessions and department assignment (administrator only)
+      description: |
+        Maps to SELECT staff_delete(:staffMemberId, :deleteReason). Own record and the last
+        active administrator cannot be deleted (409, HS002 / HS001).
+      parameters:
+        - in: path
+          name: staffMemberId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeletionRequest' }
+      responses:
+        '204': { description: Staff member deleted }
+        '400':
+          description: Reason missing or too long
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /accounts/{accountId}:
+    delete:
+      tags: [Staff]
+      operationId: deleteUserAccount
+      summary: Delete only the login account (and its sessions), keeping the staff record (administrator only)
+      description: |
+        Maps to SELECT user_account_delete(:accountId, :deleteReason). Same rules as
+        deleteStaffMember (own account / last active administrator -> 409).
+      parameters:
+        - in: path
+          name: accountId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeletionRequest' }
+      responses:
+        '204': { description: Account deleted }
+        '400':
+          description: Reason missing or too long
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ValidationProblem' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { $ref: '#/components/responses/Conflict' }
+components:
+  schemas:
+    DeletionRequest:
+      type: object
+      required: [deleteReason]
+      properties:
+        deleteReason:
+          type: string
+          minLength: 1
+          maxLength: 1000
+          description: Free-text deletion reason typed by the administrator; stored in record_deletions.reason.
+    FieldError:
+      type: object
+      required: [field, column, dataType, error, message]
+      properties:
+        field: { type: string, description: 'API property, e.g. firstName or relativeInformation.phone' }
+        column: { type: string, description: Database column }
+        dataType: { type: string, description: 'Database type of the field, e.g. text, date' }
+        error:
+          type: string
+          enum: [REQUIRED, TOO_LONG, INVALID_FORMAT, NOT_ALLOWED, OUT_OF_RANGE, DUPLICATE, IMMUTABLE, RELATIVE_REQUIRED]
+        message: { type: string, description: Turkish message }
+        messageEn: { type: string }
+    ValidationProblem:
+      allOf:
+        - $ref: '#/components/schemas/Problem'
+        - type: object
+          properties:
+            errors:
+              type: array
+              items: { $ref: '#/components/schemas/FieldError' }

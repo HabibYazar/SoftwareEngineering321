@@ -7,10 +7,21 @@ info:
     Week 8 MVP: login, roles/audit foundations, patient registration/search,
     clinician directory, appointments, outpatient examination and EMR.
     Week 10 final: laboratory requests, results and physician review.
-    Only GET /health currently exists in the scaffold; all other operations
-    remain planned. Synthetic test data only; not for clinical use.
+    Implemented in the backend: GET /health, POST /auth/login, POST /auth/logout,
+    POST /patients, GET /patients, GET /patients/{patientId} and
+    PUT /patients/{patientId}, persisted in PostgreSQL (Flyway migrations V1-V3).
+    If the backend runs without a configured database, these operations respond
+    503 (code INTEGRATION_PENDING) instead of fabricating data.
+    All other operations remain planned. Synthetic test data only; not for clinical use.
     Staff roles: Administrator, Receptionist, Physician, Nurse,
     Patient Care Assistant, Lab Technician, Cleaning Staff.
+    Authorization (US-02) is deny-by-default: missing/invalid/revoked token -> 401,
+    authenticated role without permission -> 403 (code ACCESS_DENIED). Permissions
+    are read from the database role-permission matrix on every request (Administrator
+    holds every permission; the initial matrix grants PATIENT_CREATE, PATIENT_VIEW and
+    PATIENT_UPDATE to Receptionist; other roles have no patient permission yet).
+    Audit (US-03): sign-in/out and patient data changes are logged by the database in
+    the same transaction; record views are logged by the backend.
     User-story IDs and priorities are documented in the Product Backlog V3.
 servers:
   - url: /api/v1
@@ -21,6 +32,7 @@ tags:
   - name: Authentication
   - name: Patients
   - name: Staff
+  - name: Departments
   - name: Appointments
   - name: Outpatient
   - name: Records
@@ -43,7 +55,13 @@ paths:
     post:
       tags: [Authentication]
       operationId: loginStaff
-      summary: Staff login (US-01, planned for MVP)
+      summary: Staff login (US-01, implemented)
+      description: |
+        Validates the username/password against BCrypt hashes in the staff account
+        store. The username is matched case-insensitively (usernames are stored in
+        lower case). Wrong passwords, unknown usernames and deactivated accounts return
+        the same 401 response (code INVALID_CREDENTIALS) and never issue a token.
+        Responds 503 (INTEGRATION_PENDING) if the backend runs without a database.
       security: []
       requestBody:
         required: true
@@ -58,11 +76,13 @@ paths:
               schema: { $ref: '#/components/schemas/LoginResponse' }
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /auth/logout:
     post:
       tags: [Authentication]
       operationId: logoutStaff
-      summary: Invalidate the current staff session/token (US-01, planned)
+      summary: Invalidate the current staff session/token (US-01, implemented)
+      description: Ends the server-side session of the bearer token used for this request; any later request with it returns 401.
       responses:
         '204': { description: Signed out }
         '401': { $ref: '#/components/responses/Unauthorized' }
@@ -70,8 +90,14 @@ paths:
     get:
       tags: [Patients]
       operationId: searchPatients
-      summary: Search synthetic patients by name or national ID (US-07, planned for MVP)
-      description: Supply a name fragment or an exact 11-digit synthetic national ID. Receptionist access is planned.
+      summary: Search synthetic patients by name or national ID (US-07, implemented)
+      description: |
+        Requires PATIENT_VIEW. Supply exactly one of: an exact 11-digit synthetic
+        national ID, or a name fragment matched case-insensitively (Turkish rules)
+        anywhere in the first name, last name or "first last". Results are ordered
+        by last name, first name (Turkish collation), then id. No match returns 200 with an empty array.
+        Neither or both parameters return 400 (field searchCriteria). Each returned
+        patient is recorded as an audit RECORD_VIEW event (accessChannel SEARCH_RESULT).
       parameters:
         - in: query
           name: name
@@ -90,10 +116,17 @@ paths:
         '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
     post:
       tags: [Patients]
       operationId: createPatient
-      summary: Register a synthetic patient (planned)
+      summary: Register a synthetic patient (US-06, implemented)
+      description: |
+        Requires PATIENT_CREATE. All field errors are returned together in Problem.errors
+        (code VALIDATION_FAILED); rejected values are never echoed back. A duplicate
+        national ID returns 409 (code DUPLICATE_NATIONAL_ID), also for concurrent requests.
+        Successful registration is recorded in the audit log (RECORD_CREATE, field names
+        only) in the same database transaction.
       requestBody:
         required: true
         content:
@@ -102,6 +135,10 @@ paths:
       responses:
         '201':
           description: Patient created
+          headers:
+            Location:
+              description: URL of the created patient
+              schema: { type: string, format: uri }
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Patient' }
@@ -109,11 +146,13 @@ paths:
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '409': { $ref: '#/components/responses/Conflict' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /patients/{patientId}:
     get:
       tags: [Patients]
       operationId: getPatient
-      summary: Retrieve a patient record (planned)
+      summary: Retrieve a patient record (US-07/US-08, implemented)
+      description: Requires PATIENT_VIEW. Recorded as an audit RECORD_VIEW event (accessChannel RECORD).
       parameters:
         - $ref: '#/components/parameters/patientId'
       responses:
@@ -122,14 +161,46 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Patient' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
         '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
+    put:
+      tags: [Patients]
+      operationId: updatePatient
+      summary: Update patient information (US-08, implemented)
+      description: |
+        Requires PATIENT_UPDATE. Full replacement of every field except the national ID;
+        US-06 validation rules apply (including the ADVANCED relative requirement).
+        Omitting relativeInformation removes it, which is only allowed for MILD/MODERATE.
+        A nationalId that differs from the stored value returns 400 (field nationalId,
+        code Immutable), for every role including Administrator. A successful update is
+        recorded in the audit log (RECORD_UPDATE) with the before/after values of the
+        changed fields, in the same database transaction.
+      parameters:
+        - $ref: '#/components/parameters/patientId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PatientUpdate' }
+      responses:
+        '200':
+          description: Updated patient record
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Patient' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /staff:
     get:
       tags: [Staff]
       operationId: listClinicians
-      summary: List clinicians available in synthetic demo (planned)
+      summary: List clinicians available in the database.
       parameters:
         - in: query
           name: department
@@ -143,6 +214,21 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Clinician' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+  /departments:
+    get:
+      tags: [Staff, Departments]
+      operationId: listDepartments
+      summary: List departments available in the database.
+      responses:
+        '200':
+          description: Available departments
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Department' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
   /appointments:
@@ -414,8 +500,10 @@ components:
     bearerAuth:
       type: http
       scheme: bearer
-      bearerFormat: JWT
-      description: Planned authentication mechanism; not implemented yet.
+      bearerFormat: opaque
+      description: |
+        Opaque random token returned by POST /auth/login. Validated server-side,
+        revoked by POST /auth/logout and expires at LoginResponse.expiresAt.
   parameters:
     patientId:
       name: patientId
@@ -448,14 +536,15 @@ components:
       type: object
       required: [username, password]
       properties:
-        username: { type: string, minLength: 1 }
-        password: { type: string, format: password, minLength: 1 }
+        username: { type: string, minLength: 1, maxLength: 100 }
+        password: { type: string, format: password, minLength: 1, maxLength: 128 }
     LoginResponse:
       type: object
-      required: [accessToken, tokenType, role]
+      required: [accessToken, tokenType, role, expiresAt]
       properties:
-        accessToken: { type: string, description: Planned demo token }
+        accessToken: { type: string, description: 'Opaque bearer token; send as "Authorization: Bearer <token>"' }
         tokenType: { type: string, enum: [Bearer] }
+        expiresAt: { type: string, format: date-time, description: Absolute expiry of the token }
         role:
           type: string
           enum: [Administrator, Receptionist, Physician, Nurse, PatientCareAssistant, LabTechnician, CleaningStaff]
@@ -465,21 +554,53 @@ components:
       properties:
         fullName: { type: string, minLength: 1, maxLength: 150 }
         relationship: { type: string, minLength: 1, maxLength: 80 }
-        phone: { type: string, minLength: 1, maxLength: 32 }
+        phone: { $ref: '#/components/schemas/PhoneNumber' }
+    PhoneNumber:
+      type: string
+      minLength: 7
+      maxLength: 32
+      pattern: '^\+?[0-9][0-9 ()-]{5,29}[0-9]$'
+      description: Optional leading +, digits with spaces, parentheses or hyphens; starts and ends with a digit
+      example: '+90 (555) 000-00-00'
     NewPatient:
       type: object
       description: |
         US-06: synthetic 11-digit national ID must be unique. Relative information
-        is mandatory when conditionLevel is ADVANCED; validation uses 400 for
-        missing/invalid fields and 409 for duplicate national ID.
+        is mandatory when conditionLevel is ADVANCED (field error code
+        RequiredForAdvancedCondition) and optional otherwise; when provided, all
+        three relative fields are required. Validation uses 400 for missing/invalid
+        fields and 409 for duplicate national ID. Leading/trailing whitespace is trimmed.
       required: [firstName, lastName, nationalId, dateOfBirth, gender, phone, address, conditionLevel]
       properties:
         firstName: { type: string, minLength: 1, maxLength: 100 }
         lastName: { type: string, minLength: 1, maxLength: 100 }
         nationalId: { type: string, pattern: '^[0-9]{11}$', description: Synthetic test ID only }
-        dateOfBirth: { type: string, format: date }
+        dateOfBirth: { type: string, format: date, description: 'Between 1900-01-01 and today (field error codes Min, PastOrPresent)' }
         gender: { type: string, minLength: 1, maxLength: 40 }
-        phone: { type: string, minLength: 1, maxLength: 32 }
+        phone: { $ref: '#/components/schemas/PhoneNumber' }
+        address: { type: string, minLength: 1, maxLength: 500 }
+        conditionLevel: { type: string, enum: [MILD, MODERATE, ADVANCED] }
+        relativeInformation: { $ref: '#/components/schemas/RelativeInformation' }
+      allOf:
+        - if:
+            properties:
+              conditionLevel: { const: ADVANCED }
+            required: [conditionLevel]
+          then:
+            required: [relativeInformation]
+    PatientUpdate:
+      type: object
+      description: |
+        US-08: same fields and validation as NewPatient, but nationalId is optional
+        and, if present, must equal the stored value (it can never be changed).
+      required: [firstName, lastName, dateOfBirth, gender, phone, address, conditionLevel]
+      properties:
+        firstName: { type: string, minLength: 1, maxLength: 100 }
+        lastName: { type: string, minLength: 1, maxLength: 100 }
+        nationalId: { type: string, pattern: '^[0-9]{11}$', description: Optional; must match the stored value }
+        dateOfBirth: { type: string, format: date, description: 'Between 1900-01-01 and today (field error codes Min, PastOrPresent)' }
+        gender: { type: string, minLength: 1, maxLength: 40 }
+        phone: { $ref: '#/components/schemas/PhoneNumber' }
         address: { type: string, minLength: 1, maxLength: 500 }
         conditionLevel: { type: string, enum: [MILD, MODERATE, ADVANCED] }
         relativeInformation: { $ref: '#/components/schemas/RelativeInformation' }
@@ -497,6 +618,12 @@ components:
           required: [id]
           properties:
             id: { type: string, format: uuid }
+    Department:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
     Clinician:
       type: object
       required: [id, displayName, department]
@@ -597,6 +724,16 @@ components:
         status: { type: integer, minimum: 400, maximum: 599 }
         code: { type: string }
         detail: { type: string }
+        errors:
+          type: array
+          description: Field-level validation errors (present when code is VALIDATION_FAILED)
+          items:
+            type: object
+            required: [field, code, message]
+            properties:
+              field: { type: string, example: relativeInformation.phone }
+              code: { type: string, example: NotBlank }
+              message: { type: string }
   responses:
     BadRequest:
       description: Invalid request data
@@ -620,6 +757,11 @@ components:
           schema: { $ref: '#/components/schemas/Problem' }
     Conflict:
       description: Requested state conflicts with existing data
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+    ServiceUnavailable:
+      description: The backend runs without a configured database (code INTEGRATION_PENDING)
       content:
         application/problem+json:
           schema: { $ref: '#/components/schemas/Problem' }

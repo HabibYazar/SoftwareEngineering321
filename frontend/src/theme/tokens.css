@@ -1,0 +1,67 @@
+/* Bileşenler renklerin kendisini değil, yüzey ve metin gibi rollerini kullanır.
+   Koyu tema aynı değişkenleri değiştirir; sayfa stilleri renk paletini bilmez. */
+:root {
+  color-scheme: light;
+  --page: #f1ece3;
+  --surface: #fbf8f2;
+  --sidebar: #e9e3d8;
+  --surface-hover: #efe9de;
+  --text: #212d36;
+  --muted: #526068;
+  --border: #d8cfc0;
+  --control-border: #827e73;
+  --accent: #285d53;
+  --accent-hover: #1e473e;
+  --on-accent: #faf9f1;
+  --accent-soft: #ddeae1;
+  --focus: #885027;
+  --info-bg: #e9eee9;
+  --warning: #76501e;
+  --warning-bg: #f6ead4;
+  --error: #943536;
+  --error-bg: #f5e6e0;
+  --success: #33694f;
+  --shadow: 0 2px 6px #392b1810;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #171d26;
+  --surface: #232c37;
+  --sidebar: #1c2430;
+  --surface-hover: #303b47;
+  --text: #ede9e0;
+  --muted: #b9c3cd;
+  --border: #414c59;
+  --control-border: #8995a2;
+  --accent: #acd6c7;
+  --accent-hover: #c0e4d7;
+  --on-accent: #192d26;
+  --accent-soft: #2d463f;
+  --focus: #efc08c;
+  --info-bg: #2b3a43;
+  --warning: #f0c588;
+  --warning-bg: #423629;
+  --error: #ffb3af;
+  --error-bg: #432f35;
+  --success: #a2d6b3;
+  --shadow: 0 2px 6px #070c1540;
+}
+
+/* Boşluk, köşe ve hareket ölçekleri her tema için aynıdır. */
+:root {
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --radius: 0.875rem;
+  --control-radius: 0.625rem;
+  --motion: 150ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --motion: 0ms; }
+}
