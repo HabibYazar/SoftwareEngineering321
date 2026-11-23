@@ -1,35 +1,46 @@
 sequenceDiagram
-    actor Staff as Receptionist
-    participant UI as Web UI
-    participant API as HMS REST API
-    participant DB as PostgreSQL (planned)
-    actor Doctor as Physician
-    Note over UI,DB: Week 8 MVP (Sprint 3) — planned, synthetic data only
-    Note over UI,DB: Currently only GET /api/v1/health is implemented
-    Staff->>UI: Sign in
+    autonumber
+    actor Receptionist
+    participant UI as React Frontend
+    participant API as Spring Boot API
+    participant DB as PostgreSQL
+    actor Physician
+
+    Note over Receptionist,DB: Sprint 2 implemented: login, patient registration/search/update, clinician directory
+
+    Receptionist->>UI: Log in
     UI->>API: POST /api/v1/auth/login
-    API-->>UI: Session/token and role (planned)
-    Staff->>UI: Register synthetic patient
+    API->>DB: Authenticate and create session
+    API-->>UI: Bearer token and role
+
+    Receptionist->>UI: Register synthetic patient
     UI->>API: POST /api/v1/patients
-    API->>DB: Validate and save patient
+    API->>DB: Validate and persist patient
     API-->>UI: 201 Created
-    Staff->>UI: Select clinician and available 15-minute slot
-    UI->>API: POST /api/v1/appointments
-    API->>DB: Check slot and reserve atomically
-    alt slot unavailable
-        API-->>UI: 409 Conflict
-    else slot available
-        API-->>UI: 201 Created
+
+    Receptionist->>UI: Browse doctors by department
+    UI->>API: GET /api/v1/departments
+    UI->>API: GET /api/v1/staff?department=...
+    API-->>UI: Department and clinician records
+
+    Note over Receptionist,DB: Sprint 3 below is PLANNED and is not implemented in Sprint 2
+
+    opt Planned Sprint 3 appointment workflow
+        Receptionist->>UI: Select clinician and available slot
+        UI->>API: POST /api/v1/appointments
+        API->>DB: Planned atomic slot reservation
+        alt Slot unavailable
+            API-->>UI: Planned 409 Conflict
+        else Slot available
+            API-->>UI: Planned 201 Created
+        end
+
+        Physician->>UI: View schedule and begin examination
+        UI->>API: GET /api/v1/appointments
+        UI->>API: POST /api/v1/encounters
+        Physician->>UI: Record clinical note and diagnosis
+        UI->>API: PUT /api/v1/encounters/{id}/clinical-note
+        Physician->>UI: Complete examination
     end
-    Doctor->>UI: View daily schedule and start examination
-    UI->>API: GET /api/v1/appointments?clinicianId=...&date=...
-    UI->>API: POST /api/v1/encounters
-    API-->>UI: 201 Created (IN_EXAMINATION)
-    Doctor->>UI: Save examination note and diagnosis
-    UI->>API: PUT /api/v1/encounters/{encounterId}/clinical-note
-    Doctor->>UI: View/update medical history and allergies
-    UI->>API: GET /api/v1/patients/{patientId}/medical-history
-    Doctor->>UI: Complete examination
-    UI->>API: PATCH /api/v1/encounters/{encounterId}
-    API-->>UI: 200 OK (COMPLETED)
-    Note over UI,DB: Laboratory request and results belong to Week 10 final, NOT this MVP
+
+    Note over UI,DB: Laboratory result workflows belong to the final iteration

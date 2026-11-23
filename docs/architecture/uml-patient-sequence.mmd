@@ -1,0 +1,54 @@
+sequenceDiagram
+    autonumber
+    actor Receptionist
+    participant UI as React Frontend
+    participant Security as Spring Security
+    participant Controller as PatientController
+    participant Service as PatientService
+    participant Validator as PatientValidator
+    participant Repo as JdbcPatientRepository
+    participant DB as PostgreSQL
+    participant Audit as AuditService / DB Triggers
+
+    Receptionist->>UI: Complete patient registration
+    UI->>Security: POST /api/v1/patients (Bearer token)
+    Security->>Security: Verify PATIENT_CREATE permission
+
+    alt Unauthorized
+        Security-->>UI: HTTP 401 or 403
+    else Authorized
+        Security->>Controller: Forward registration request
+        Controller->>Service: register(nationalId, details, actor)
+        Service->>Validator: Validate ID, fields and condition
+        alt Invalid fields
+            Service-->>UI: HTTP 400 field errors
+        else Valid fields
+            Service->>Repo: insert(patient, actor)
+            Repo->>DB: INSERT patient and optional relative
+            DB->>Audit: Audit trigger, same transaction
+            DB-->>Repo: Persisted patient
+            Repo-->>Service: Patient
+            Service-->>Controller: Patient
+            Controller-->>UI: HTTP 201 Created
+        end
+    end
+
+    Receptionist->>UI: Search by name or national ID
+    UI->>Controller: GET /api/v1/patients?name=... (authorized)
+    Controller->>Service: search(name, nationalId, actor)
+    Service->>Repo: searchByName / findByNationalId
+    Repo->>DB: SELECT matching patients
+    DB-->>Repo: Patient records
+    Service->>Audit: Record viewed patient results
+    Controller-->>UI: HTTP 200 patient list
+
+    opt Update existing patient
+        Receptionist->>UI: Edit permitted patient fields
+        UI->>Controller: PUT /api/v1/patients/{patientId}
+        Controller->>Service: update(patientId, details, actor)
+        Service->>Validator: Apply US-06 validation rules
+        Service->>Repo: update(patient, actor)
+        Repo->>DB: UPDATE patient and relative
+        DB->>Audit: Before/after audit trigger
+        Controller-->>UI: HTTP 200 updated patient
+    end

@@ -1,7 +1,20 @@
-flowchart TD
-    Users[Authorized Hospital Staff Browser] -->|Local network HTTP for demo / TLS required in hospital| ReverseProxy[Nginx / React Static Frontend]
-    ReverseProxy -->|REST /api/v1| Backend[Spring Boot Modular Monolith]
-    Backend -->|JDBC - future implementation| DB[(PostgreSQL)]
-    Backend -. not implemented .-> Integrations[Approved External Adapters]
-    classDef deferred stroke-dasharray:5 5,fill:#f2f2f2
-    class Integrations deferred
+flowchart TB
+    Users["Authorized staff (Browser)"]
+
+    subgraph LocalHost["Local Docker demonstration host"]
+        direction TB
+        Frontend["Frontend Container: React and TypeScript SPA served by Nginx 1.29"]
+        Backend["Backend Container: Spring Boot 3.5 / Java 21, modular monolith"]
+        Database[("Database Container: PostgreSQL 17")]
+        Volume[("Docker named volume: hms_postgres")]
+    end
+
+    Users -->|"HTTP localhost:80; configurable loopback port"| Frontend
+    Frontend -->|"Reverse proxy REST /api/v1"| Backend
+    Backend -->|"JDBC TCP 5432, internal network"| Database
+    Database <-->|"Persistent database files"| Volume
+
+    Backend -.->|"Flyway on startup: V1-V5 plus optional local demo seeds"| Database
+
+    Note["Backend host port: 127.0.0.1:8080 by default. Database: no published host port. TLS required for real deployments."]
+    Note -.- Backend
