@@ -19,6 +19,7 @@ https://github.com/HabibYazar/SoftwareEngineering321
 | User-flow diagrams | [Figma User Flows](https://www.figma.com/design/zgMOSpFkfdUensVpfB7jgR), [Mermaid Flow](../architecture/sprint2-user-flows.mmd) |
 | C4 models | [C4 Architecture](architecture.md) |
 | UML diagrams | [Architecture Diagrams](../architecture/README.md) |
+| Requirements traceability | [Traceability Matrix](traceability-matrix.md) |
 | Verification | [Sprint 2 Integration Report](README.md) |
 
 ## Team Members and Responsibilities

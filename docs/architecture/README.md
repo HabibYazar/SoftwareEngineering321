@@ -44,4 +44,4 @@ Sprint 2 implements authentication, role-based authorization, audit infrastructu
 
 Appointments, encounters, clinical records, laboratory functions and inpatient workflows are planned or deferred. Their conceptual domain relationships must not be confused with already deployed backend functionality.
 
-The UI/UX user-flow diagram here is supplementary engineering documentation; the separately required **Figma prototype and its shareable link** must still be provided for Teams submission.
+The engineering user flows are supplemented by the [Sprint 2 Figma UI/UX prototypes](https://www.figma.com/design/zgMOSpFkfdUensVpfB7jgR), covering login, workspace, patient registration, patient search/profile and the doctor directory.
