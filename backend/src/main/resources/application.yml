@@ -20,6 +20,9 @@ spring:
     # yalnızca hms_app rolünün üyesi olabilir; şemayı kuran kullanıcı ayrı verilebilir.
     user: ${HMS_DB_MIGRATION_USER:${HMS_DB_USER:}}
     password: ${HMS_DB_MIGRATION_PASSWORD:${HMS_DB_PASSWORD:}}
+    # Varsayılan yalnızca şema migration'larıdır. Yerel demoda sentetik US-09 dizini için
+    # "classpath:db/migration,classpath:db/seed" verilir (compose.yaml).
+    locations: ${HMS_FLYWAY_LOCATIONS:classpath:db/migration}
   web:
     # Doğrulama mesajları sunucu yerel ayarından bağımsız ve öngörülebilir olsun diye sabit İngilizce;
     # kullanıcıya gösterilecek metinler ön yüzde hata kodlarından üretilir.
@@ -32,3 +35,11 @@ hms:
   security:
     # Erişim tokenının mutlak geçerlilik süresi (ISO-8601). Varsayılan: bir vardiya (8 saat).
     access-token-ttl: PT8H
+  bootstrap:
+    # İlk yönetici yalnızca bu iki değer birlikte verilirse ve sistemde hiç yönetici yoksa oluşturulur
+    # (AdministratorBootstrap). Değerler yalnızca ortamdan okunur; depoda varsayılan parola yoktur.
+    admin:
+      username: ${HMS_BOOTSTRAP_ADMIN_USERNAME:}
+      password: ${HMS_BOOTSTRAP_ADMIN_PASSWORD:}
+      first-name: ${HMS_BOOTSTRAP_ADMIN_FIRST_NAME:Sistem}
+      last-name: ${HMS_BOOTSTRAP_ADMIN_LAST_NAME:Yöneticisi}

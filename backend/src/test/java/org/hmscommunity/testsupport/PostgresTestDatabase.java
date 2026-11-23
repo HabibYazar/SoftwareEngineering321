@@ -40,6 +40,10 @@ public final class PostgresTestDatabase {
 
     private static volatile PostgresTestDatabase instance;
 
+    /** Yerel demo yapılandırmasıyla (compose.yaml) aynı Flyway konumları. */
+    public static final String[] MIGRATION_AND_SEED_LOCATIONS = {"classpath:db/migration", "classpath:db/seed"};
+
+    private final String serverUrl;
     private final String jdbcUrl;
     private final String adminUser;
     private final String adminPassword;
@@ -53,13 +57,11 @@ public final class PostgresTestDatabase {
         String serverUrl = requiredVariable(URL_VARIABLE);
         adminUser = requiredVariable("HMS_TEST_DB_USER");
         adminPassword = requiredVariable("HMS_TEST_DB_PASSWORD");
-        String databaseName = "hms_it_" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
-            + "_" + randomHex(3);
-        JdbcClient server = JdbcClient.create(new DriverManagerDataSource(serverUrl, adminUser, adminPassword));
-        server.sql("CREATE DATABASE " + databaseName + " ENCODING 'UTF8' TEMPLATE template0").update();
-        jdbcUrl = serverUrl.substring(0, serverUrl.lastIndexOf('/') + 1) + databaseName;
+        this.serverUrl = serverUrl;
+        jdbcUrl = createDatabase("hms_it_");
 
-        Flyway.configure().dataSource(jdbcUrl, adminUser, adminPassword).load().migrate();
+        // Yerel demodaki gibi şema migration'larına ek olarak sentetik US-09 dizini de uygulanır.
+        migrate(jdbcUrl, MIGRATION_AND_SEED_LOCATIONS);
 
         appPassword = randomHex(24);
         admin = JdbcClient.create(new DriverManagerDataSource(jdbcUrl, adminUser, adminPassword));
@@ -113,6 +115,34 @@ public final class PostgresTestDatabase {
 
     public String appPassword() {
         return appPassword;
+    }
+
+    /**
+     * Aynı sunucuda, yalnızca şema migration'ları uygulanmış (seed, hesap ve yönetici içermeyen) yeni bir
+     * veritabanı oluşturur ve JDBC adresini döndürür. İlk kurulum adımlarını sınamak için kullanılır.
+     */
+    public String createSchemaOnlyDatabase() {
+        String url = createDatabase("hms_it_fresh_");
+        migrate(url, "classpath:db/migration");
+        return url;
+    }
+
+    public JdbcClient connect(String url, String user, String password) {
+        return JdbcClient.create(new DriverManagerDataSource(url, user, password));
+    }
+
+    /** Flyway'i yönetici olarak yeniden çalıştırır ve uygulanan migration sayısını döndürür. */
+    public int migrate(String url, String... locations) {
+        return Flyway.configure().dataSource(url, adminUser, adminPassword).locations(locations).load()
+            .migrate().migrationsExecuted;
+    }
+
+    private String createDatabase(String prefix) {
+        String databaseName = prefix + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"))
+            + "_" + randomHex(3);
+        JdbcClient server = JdbcClient.create(new DriverManagerDataSource(serverUrl, adminUser, adminPassword));
+        server.sql("CREATE DATABASE " + databaseName + " ENCODING 'UTF8' TEMPLATE template0").update();
+        return serverUrl.substring(0, serverUrl.lastIndexOf('/') + 1) + databaseName;
     }
 
     /** Doğrulama sorguları için yönetici bağlantısı (uygulama bu bağlantıyı kullanmaz). */

@@ -1,22 +1,13 @@
--- =============================================================================
--- HMS Community | Flyway migration V4
--- Reference seed data: clinical departments and physicians (clinicians).
---
--- Replaces the deprecated Docker init_and_seed.sql CSV COPY approach.
--- Maps CSV records into the V1 normalized schema:
---   * departments        (id, name, is_active)
---   * staff_members      (id, role_id = Physician, first_name, last_name, title)
---   * doctor_departments (staff_member_id, department_id)
---   * doctors (view)     automatically exposes the clinician directory (US-09)
--- =============================================================================
+-- HMS Community: additional synthetic US-09 directory.
+-- Local demo only; db/seed is not enabled in production.
+-- Idempotent: existing departments and doctors remain unchanged.
 
-SELECT set_config('hms.trusted_op', 'migration', false);
+SELECT set_config('hms.trusted_op', 'migration', true);
 
--- -----------------------------------------------------------------------------
--- 1. Departments
--- -----------------------------------------------------------------------------
-INSERT INTO departments (id, name, is_active) VALUES
-    ('9fecd79a-9ed6-59c8-9345-813bc15a6e13'::uuid, 'Adli Tıp', true),
+-- Preserve 8 department definitions, avoiding duplicate department names.
+WITH seed_departments (id, name, is_active) AS (
+    VALUES
+('9fecd79a-9ed6-59c8-9345-813bc15a6e13'::uuid, 'Adli Tıp', true),
     ('1e790629-a7b2-5af4-97fa-c8e678fd92cf'::uuid, 'Kardiyoloji', true),
     ('3e012ef6-0833-505e-8b43-3c618893df45'::uuid, 'İç Hastalıkları', true),
     ('6cb6c0a4-e92c-5023-98fe-8268525babb1'::uuid, 'Nöroloji', true),
@@ -24,12 +15,17 @@ INSERT INTO departments (id, name, is_active) VALUES
     ('7690524a-267f-5774-b128-8c4405a09902'::uuid, 'Ortopedi ve Travmatoloji', true),
     ('5495f47f-b0e0-54e4-b7fa-187cf797501b'::uuid, 'Göz Hastalıkları', true),
     ('3bc1edfc-1f3f-54d7-aeb1-6b65e0cd6fda'::uuid, 'Tıbbi Biyokimya', true)
+)
+INSERT INTO departments (id, name, is_active)
+SELECT s.id, s.name, s.is_active
+FROM seed_departments s
+WHERE NOT EXISTS (
+    SELECT 1 FROM departments d
+    WHERE d.id = s.id OR lower(d.name) = lower(s.name)
+)
 ON CONFLICT (id) DO NOTHING;
 
--- -----------------------------------------------------------------------------
--- 2. Clinicians (staff_members with role = Physician)
---    Note: display_name is a STORED generated column in staff_members.
--- -----------------------------------------------------------------------------
+-- Preserve Yilmaz's 26 synthetic physicians.
 WITH physician_role AS (
     SELECT id FROM roles WHERE code = 'Physician'
 )
@@ -66,11 +62,22 @@ CROSS JOIN (VALUES
 ) AS v(id, first_name, last_name, title)
 ON CONFLICT (id) DO NOTHING;
 
--- -----------------------------------------------------------------------------
--- 3. Physician-to-Department assignments (doctor_departments)
--- -----------------------------------------------------------------------------
-INSERT INTO doctor_departments (staff_member_id, department_id) VALUES
-    ('5f595750-b5aa-cbd5-123a-22bb1d220247'::uuid, '1e790629-a7b2-5af4-97fa-c8e678fd92cf'::uuid),
+-- Resolve department IDs by name because the existing demo seed
+-- may already contain departments with different UUIDs.
+WITH seed_departments (id, name, is_active) AS (
+    VALUES
+('9fecd79a-9ed6-59c8-9345-813bc15a6e13'::uuid, 'Adli Tıp', true),
+    ('1e790629-a7b2-5af4-97fa-c8e678fd92cf'::uuid, 'Kardiyoloji', true),
+    ('3e012ef6-0833-505e-8b43-3c618893df45'::uuid, 'İç Hastalıkları', true),
+    ('6cb6c0a4-e92c-5023-98fe-8268525babb1'::uuid, 'Nöroloji', true),
+    ('e21b722a-86c9-5ad2-bad7-f503df5e6a33'::uuid, 'Genel Cerrahi', true),
+    ('7690524a-267f-5774-b128-8c4405a09902'::uuid, 'Ortopedi ve Travmatoloji', true),
+    ('5495f47f-b0e0-54e4-b7fa-187cf797501b'::uuid, 'Göz Hastalıkları', true),
+    ('3bc1edfc-1f3f-54d7-aeb1-6b65e0cd6fda'::uuid, 'Tıbbi Biyokimya', true)
+),
+seed_assignments (staff_member_id, seed_department_id) AS (
+    VALUES
+('5f595750-b5aa-cbd5-123a-22bb1d220247'::uuid, '1e790629-a7b2-5af4-97fa-c8e678fd92cf'::uuid),
     ('0f7987a0-b28a-5b35-953b-8caa4d250d57'::uuid, '9fecd79a-9ed6-59c8-9345-813bc15a6e13'::uuid),
     ('5e9932f6-df68-53b3-9309-af1f46930de0'::uuid, '9fecd79a-9ed6-59c8-9345-813bc15a6e13'::uuid),
     ('21e2a9c9-04a7-51cd-bb50-8652e2278c37'::uuid, '1e790629-a7b2-5af4-97fa-c8e678fd92cf'::uuid),
@@ -96,6 +103,15 @@ INSERT INTO doctor_departments (staff_member_id, department_id) VALUES
     ('ba23c040-4459-5f48-aa57-73070481dfee'::uuid, '5495f47f-b0e0-54e4-b7fa-187cf797501b'::uuid),
     ('718f474f-563c-5166-9ae0-ae86104e38c0'::uuid, '3bc1edfc-1f3f-54d7-aeb1-6b65e0cd6fda'::uuid),
     ('57b4000a-ec3d-535c-9a7d-7ab8b397e066'::uuid, '3bc1edfc-1f3f-54d7-aeb1-6b65e0cd6fda'::uuid)
+)
+INSERT INTO doctor_departments (staff_member_id, department_id)
+SELECT a.staff_member_id, d.id
+FROM seed_assignments a
+JOIN seed_departments sd ON sd.id = a.seed_department_id
+JOIN departments d ON lower(d.name) = lower(sd.name)
+JOIN staff_members sm ON sm.id = a.staff_member_id
+JOIN roles r ON r.id = sm.role_id AND r.code = 'Physician'
+WHERE d.is_active
 ON CONFLICT (staff_member_id) DO NOTHING;
 
-SELECT set_config('hms.trusted_op', '', false);
+SELECT set_config('hms.trusted_op', '', true);

@@ -1,6 +1,5 @@
 /**
- * Doctor and Staff Management module boundary.
- * Architecture-only marker: no business functionality is implemented yet.
- * Introduce api/application/domain/infrastructure subpackages as stories are delivered.
+ * Departman listesi (US-09, #204). Departmanlar Data iş akışının {@code departments} tablosundan okunur;
+ * doktor dizini {@code org.hmscommunity.staff} modülündedir.
  */
-package org.hmscommunity.staff;
+package org.hmscommunity.departments;

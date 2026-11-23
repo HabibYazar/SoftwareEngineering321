@@ -1,3 +1,4 @@
+import { isSupportedGender, normalizeTurkishMobile, patientPhoneMessage } from './formOptions.ts'
 import { conditionLevels, type ConditionLevel, type NewPatient, type Patient } from './types.ts'
 
 // Uzunluk sınırları OpenAPI'den gelir ve hem form hem yanıt doğrulamasında kullanılır.
@@ -31,10 +32,24 @@ export const emptyRegistration: RegistrationDraft = {
 
 const patientTextFields = ['firstName', 'lastName', 'gender', 'phone', 'address'] as const
 const relativeFields = ['relativeFullName', 'relativeRelationship', 'relativePhone'] as const
-// Kayıt ve tam kimlik araması aynı 11 haneli biçimi kullanır.
+// Arama ve API yanıtları eski kayıtların 11 haneli kimliklerini kabul etmeye devam eder.
 export const nationalIdPattern = /^[0-9]{11}$/
-// Java PatientDetails ve RelativeInformation aynı telefon biçimini denetler.
-const patientPhonePattern = /^\+?[0-9][0-9 ()-]{5,29}[0-9]$/
+
+// Sağlama yalnızca yeni kayıt içindir. Kurallar numaranın matematiksel yapısını denetler.
+export function validateTurkishNationalId(value: string): string | undefined {
+  if (value.length !== 11 || !nationalIdPattern.test(value)) {
+    return 'Enter exactly 11 digits (0–9) without spaces or other characters.'
+  }
+  if (value[0] === '0') return 'The first digit of the national ID cannot be zero.'
+
+  const [first, second, third, fourth, fifth, sixth, seventh, eighth, ninth, tenth, eleventh] = Array.from(value, Number)
+  const oddSum = first + third + fifth + seventh + ninth
+  const evenSum = second + fourth + sixth + eighth
+  const weighted = oddSum * 7 - evenSum
+  // JavaScript kalan işlemi negatif olabilir. Onuncu haneyi 0–9 aralığına taşırız.
+  if (((weighted % 10) + 10) % 10 !== tenth) return 'The 10th digit of the national ID is incorrect.'
+  if ((oddSum + evenSum + tenth) % 10 !== eleventh) return 'The 11th digit of the national ID is incorrect.'
+}
 // Kayıt ve düzenleme için PostgreSQL hasta servisinin kabul ettiği en erken tarih.
 export const earliestPatientBirthDate = '1900-01-01'
 const calendarDatePattern = /^\d{4}-\d{2}-\d{2}$/
@@ -63,8 +78,9 @@ function validateText(draft: PatientDetailsDraft, errors: PatientDetailsErrors, 
   const value = draft[field].trim()
   if (!value) errors[field] = 'This field is required.'
   else if (value.length > fieldLimits[field]) errors[field] = 'Use ' + fieldLimits[field] + ' characters or fewer.'
-  else if ((field === 'phone' || field === 'relativePhone') && !patientPhonePattern.test(value)) {
-    errors[field] = 'Enter a valid phone number with 7 to 31 characters, optionally prefixed by +.'
+  else if (field === 'gender' && !isSupportedGender(draft.gender)) errors.gender = 'Choose a supported gender option.'
+  else if ((field === 'phone' || field === 'relativePhone') && !normalizeTurkishMobile(draft[field])) {
+    errors[field] = patientPhoneMessage
   }
 }
 
@@ -94,7 +110,7 @@ export function validatePatientDetails(draft: PatientDetailsDraft, includeRelati
     lastName: draft.lastName.trim(),
     dateOfBirth: draft.dateOfBirth,
     gender: draft.gender.trim(),
-    phone: draft.phone.trim(),
+    phone: normalizeTurkishMobile(draft.phone)!,
     address: draft.address.trim(),
     conditionLevel: level,
   }
@@ -102,7 +118,7 @@ export function validatePatientDetails(draft: PatientDetailsDraft, includeRelati
     payload.relativeInformation = {
       fullName: draft.relativeFullName.trim(),
       relationship: draft.relativeRelationship.trim(),
-      phone: draft.relativePhone.trim(),
+      phone: normalizeTurkishMobile(draft.relativePhone)!,
     }
   }
   return { payload }
@@ -112,12 +128,12 @@ export function validatePatientDetails(draft: PatientDetailsDraft, includeRelati
 export function validateRegistration(draft: RegistrationDraft, includeRelative: boolean):
   { payload: NewPatient } | { errors: RegistrationErrors } {
   const details = validatePatientDetails(draft, includeRelative)
-  const nationalId = draft.nationalId.trim()
-  if (!nationalIdPattern.test(nationalId)) {
-    return { errors: { ...('errors' in details ? details.errors : {}), nationalId: 'Enter a synthetic national ID with exactly 11 digits.' } }
+  const nationalIdError = validateTurkishNationalId(draft.nationalId)
+  if (nationalIdError) {
+    return { errors: { ...('errors' in details ? details.errors : {}), nationalId: nationalIdError } }
   }
   if ('errors' in details) return details
-  return { payload: { ...details.payload, nationalId } }
+  return { payload: { ...details.payload, nationalId: draft.nationalId } }
 }
 
 // Profil bağlantıları ve hasta yanıtları aynı UUID biçimini kullanır.

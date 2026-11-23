@@ -6,11 +6,12 @@ import { createAppHistory } from '../src/navigation/history.ts'
 import { createHttpRegistrationService } from '../src/patients/httpRegistrationService.ts'
 import { createMockRegistrationService } from '../src/patients/mockRegistrationService.ts'
 import { emptyRegistration, isPatient, validateRegistration } from '../src/patients/validation.ts'
+import { syntheticTurkishNationalId } from './fixtures/turkishNationalId.mjs'
 
 // Kimlikler ve alanlar yalnızca sentetik test verisidir.
 const validDraft = {
-  ...emptyRegistration, firstName: 'Demo', lastName: 'Example', nationalId: '00000000042',
-  dateOfBirth: '2000-02-29', gender: 'Not disclosed', phone: '0000000000', address: 'Synthetic address',
+  ...emptyRegistration, firstName: 'Demo', lastName: 'Example', nationalId: syntheticTurkishNationalId('100000042'),
+  dateOfBirth: '2000-02-29', gender: 'Male', phone: '05000000000', address: 'Synthetic address',
   conditionLevel: 'MILD',
 }
 const payload = validateRegistration(validDraft, false).payload
@@ -22,11 +23,11 @@ test('registration reports each missing required field', () => {
   ])
 })
 
-test('national ID requires exactly 11 ASCII digits and keeps leading zeros', () => {
+test('new registration accepts a checksum-valid synthetic ID and rejects invalid lengths and characters', () => {
   for (const nationalId of ['12345', '000000000042', '00000000abc', '٠٠٠٠٠٠٠٠٠٤٢']) {
     assert.ok(validateRegistration({ ...validDraft, nationalId }, false).errors.nationalId)
   }
-  assert.equal(payload.nationalId, '00000000042')
+  assert.equal(payload.nationalId, validDraft.nationalId)
 })
 
 test('registration validates calendar dates, trimmed values and contract lengths', () => {
@@ -42,8 +43,8 @@ test('switching to Advanced makes all relative fields mandatory', () => {
     'relativeFullName', 'relativePhone', 'relativeRelationship',
   ])
   assert.deepEqual(validateRegistration({
-    ...advanced, relativeFullName: 'Demo Contact', relativeRelationship: 'Sibling', relativePhone: '0000000001',
-  }, false).payload.relativeInformation, { fullName: 'Demo Contact', relationship: 'Sibling', phone: '0000000001' })
+    ...advanced, relativeFullName: 'Demo Contact', relativeRelationship: 'Sibling', relativePhone: '05000000001',
+  }, false).payload.relativeInformation, { fullName: 'Demo Contact', relationship: 'Sibling', phone: '+905000000001' })
 })
 
 test('Mild and Moderate omit optional contacts, or require all fields if one is submitted', () => {
@@ -51,7 +52,7 @@ test('Mild and Moderate omit optional contacts, or require all fields if one is 
     const draft = { ...validDraft, conditionLevel, relativeFullName: 'Demo Contact' }
     assert.equal(validateRegistration(draft, false).payload.relativeInformation, undefined)
     assert.ok(validateRegistration(draft, true).errors.relativePhone)
-    const complete = { ...draft, relativeRelationship: 'Parent', relativePhone: '0000000001' }
+    const complete = { ...draft, relativeRelationship: 'Parent', relativePhone: '05000000001' }
     assert.equal(validateRegistration(complete, true).payload.relativeInformation.relationship, 'Parent')
   }
 })
@@ -91,7 +92,7 @@ test('network failures, cancellation and malformed 201 responses never report su
   const responses = [
     new Response('{', { status: 201 }),
     Response.json({ ...responsePatient, id: 'not-a-uuid' }, { status: 201 }),
-    Response.json({ ...responsePatient, nationalId: '00000000043' }, { status: 201 }),
+    Response.json({ ...responsePatient, nationalId: syntheticTurkishNationalId('100000043') }, { status: 201 }),
     Response.json({ ...responsePatient, conditionLevel: 'ADVANCED' }, { status: 201 }),
   ]
   for (const response of responses) {

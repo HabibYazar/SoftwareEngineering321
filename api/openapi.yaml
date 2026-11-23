@@ -8,8 +8,9 @@ info:
     clinician directory, appointments, outpatient examination and EMR.
     Week 10 final: laboratory requests, results and physician review.
     Implemented in the backend: GET /health, POST /auth/login, POST /auth/logout,
-    POST /patients, GET /patients, GET /patients/{patientId} and
-    PUT /patients/{patientId}, persisted in PostgreSQL (Flyway migrations V1-V3).
+    POST /patients, GET /patients, GET /patients/{patientId},
+    PUT /patients/{patientId}, GET /departments and GET /staff, persisted in
+    PostgreSQL (Flyway migrations V1-V4).
     If the backend runs without a configured database, these operations respond
     503 (code INTEGRATION_PENDING) instead of fabricating data.
     All other operations remain planned. Synthetic test data only; not for clinical use.
@@ -18,8 +19,9 @@ info:
     Authorization (US-02) is deny-by-default: missing/invalid/revoked token -> 401,
     authenticated role without permission -> 403 (code ACCESS_DENIED). Permissions
     are read from the database role-permission matrix on every request (Administrator
-    holds every permission; the initial matrix grants PATIENT_CREATE, PATIENT_VIEW and
-    PATIENT_UPDATE to Receptionist; other roles have no patient permission yet).
+    holds every permission; the initial matrix grants PATIENT_CREATE, PATIENT_VIEW,
+    PATIENT_UPDATE and DOCTOR_DIRECTORY_VIEW to Receptionist; other roles have no
+    patient or directory permission yet).
     Audit (US-03): sign-in/out and patient data changes are logged by the database in
     the same transaction; record views are logged by the backend.
     User-story IDs and priorities are documented in the Product Backlog V3.
@@ -200,7 +202,12 @@ paths:
     get:
       tags: [Staff]
       operationId: listClinicians
-      summary: List clinicians available in the database.
+      summary: List doctors, optionally filtered by department (US-09, implemented)
+      description: |
+        Requires DOCTOR_DIRECTORY_VIEW. Returns assigned physicians of active departments
+        from the database (doctors view), ordered by department, last name and first name.
+        The department filter matches a Department.name exactly; a blank value lists every
+        doctor. A department without doctors or an unknown name returns 200 with [].
       parameters:
         - in: query
           name: department
@@ -214,13 +221,18 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Clinician' }
+        '400': { $ref: '#/components/responses/BadRequest' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /departments:
     get:
-      tags: [Departments]
+      tags: [Staff, Departments]
       operationId: listDepartments
-      summary: List departments available in the database.
+      summary: List departments (US-09, implemented)
+      description: |
+        Requires DOCTOR_DIRECTORY_VIEW. Every active department from the database, including
+        departments without doctors, ordered by name (Turkish collation).
       responses:
         '200':
           description: Available departments
@@ -231,6 +243,7 @@ paths:
                 items: { $ref: '#/components/schemas/Department' }
         '401': { $ref: '#/components/responses/Unauthorized' }
         '403': { $ref: '#/components/responses/Forbidden' }
+        '503': { $ref: '#/components/responses/ServiceUnavailable' }
   /appointments:
     post:
       tags: [Appointments]
@@ -576,7 +589,7 @@ components:
         lastName: { type: string, minLength: 1, maxLength: 100 }
         nationalId: { type: string, pattern: '^[0-9]{11}$', description: Synthetic test ID only }
         dateOfBirth: { type: string, format: date, description: 'Between 1900-01-01 and today (field error codes Min, PastOrPresent)' }
-        gender: { type: string, minLength: 1, maxLength: 40 }
+        gender: { type: string, enum: [Male, Female] }
         phone: { $ref: '#/components/schemas/PhoneNumber' }
         address: { type: string, minLength: 1, maxLength: 500 }
         conditionLevel: { type: string, enum: [MILD, MODERATE, ADVANCED] }
@@ -599,7 +612,7 @@ components:
         lastName: { type: string, minLength: 1, maxLength: 100 }
         nationalId: { type: string, pattern: '^[0-9]{11}$', description: Optional; must match the stored value }
         dateOfBirth: { type: string, format: date, description: 'Between 1900-01-01 and today (field error codes Min, PastOrPresent)' }
-        gender: { type: string, minLength: 1, maxLength: 40 }
+        gender: { type: string, enum: [Male, Female] }
         phone: { $ref: '#/components/schemas/PhoneNumber' }
         address: { type: string, minLength: 1, maxLength: 500 }
         conditionLevel: { type: string, enum: [MILD, MODERATE, ADVANCED] }
@@ -620,10 +633,10 @@ components:
             id: { type: string, format: uuid }
     Department:
       type: object
-      required: [id, department]
+      required: [id, name]
       properties:
         id: { type: string, format: uuid }
-        department: { type: string }
+        name: { type: string }
     Clinician:
       type: object
       required: [id, displayName, department]

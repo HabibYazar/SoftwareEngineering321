@@ -18,7 +18,9 @@ public enum Permission {
     /** US-07/US-08: hasta arama ve tek bir hasta kaydını görüntüleme. */
     PATIENT_VIEW,
     /** US-08: hasta bilgilerini güncelleme. */
-    PATIENT_UPDATE;
+    PATIENT_UPDATE,
+    /** US-09: departmanları ve departmana göre doktorları listeleme (V4 migration'ı). */
+    DOCTOR_DIRECTORY_VIEW;
 
     /** Spring Security yetki adı; veritabanındaki izin koduyla aynıdır. */
     public String authority() {

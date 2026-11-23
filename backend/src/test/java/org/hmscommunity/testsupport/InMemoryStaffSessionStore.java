@@ -22,18 +22,18 @@ import org.hmscommunity.security.authorization.Permission;
 /**
  * Veritabanısız testlerde {@code auth_*} SQL fonksiyonlarının oturum davranışını taklit eden test dublörü.
  *
- * <p>İzinler, V1/V3 migration'larının kurduğu başlangıç matrisinin aynısıdır (Administrator her izne,
- * Receptionist hasta oluşturma/görüntüleme/güncellemeye sahiptir; diğer rollerin izni yoktur). Gerçek
+ * <p>İzinler, V1/V3/V4 migration'larının kurduğu başlangıç matrisinin aynısıdır (Administrator her izne,
+ * Receptionist hasta oluşturma/görüntüleme/güncelleme ve doktor dizinine sahiptir; diğer rollerin izni yoktur). Gerçek
  * veritabanının aynı sonuçları verdiği PostgreSQL entegrasyon testlerinde ayrıca doğrulanır. Denetim
  * kaydı taklit edilmez; giriş/çıkış kayıtları yalnızca gerçek veritabanı testlerinde doğrulanır.
  */
 public class InMemoryStaffSessionStore implements StaffSessionStore {
 
-    /** V1/V3 migration'larındaki başlangıç rol–izin matrisi. */
+    /** V1/V3/V4 migration'larındaki başlangıç rol–izin matrisi. */
     public static final Map<StaffRole, Set<Permission>> INITIAL_DATABASE_MATRIX = Map.of(
         StaffRole.ADMINISTRATOR, EnumSet.allOf(Permission.class),
-        StaffRole.RECEPTIONIST,
-        EnumSet.of(Permission.PATIENT_CREATE, Permission.PATIENT_VIEW, Permission.PATIENT_UPDATE));
+        StaffRole.RECEPTIONIST, EnumSet.of(Permission.PATIENT_CREATE, Permission.PATIENT_VIEW,
+            Permission.PATIENT_UPDATE, Permission.DOCTOR_DIRECTORY_VIEW));
 
     /** {@code auth_login_failure} çağrısı: eşleşen hesap ve neden. */
     public record FailedLogin(StaffAccount matchedAccount, LoginFailureReason reason) {

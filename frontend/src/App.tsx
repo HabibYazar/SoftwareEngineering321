@@ -1,8 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { AuditLogsPage } from './admin/audit/AuditLogsPage'
+import { StaffManagementPage } from './admin/staff/StaffManagementPage'
+import type { AuditService } from './admin/audit/model'
+import type { StaffManagementService } from './admin/staff/model'
 import { useAuth } from './auth/AuthProvider'
 import { LoginPage } from './auth/LoginPage'
 import { ProtectedRoute } from './auth/ProtectedRoute'
-import { doctorsPath, homePath, patientSearchPath, readPatientEditPath, registrationPath, roleLabels, workflowRoutes } from './auth/routing'
+import { auditLogsPath, staffManagementPath, doctorsPath, homePath, patientSearchPath, readPatientEditPath, registrationPath, roleLabels, workflowRoutes } from './auth/routing'
 import { AppLayout } from './components/AppLayout'
 import { useAppNavigation } from './navigation/useAppNavigation'
 import { ArchitecturePage } from './pages/ArchitecturePage'
@@ -12,9 +16,10 @@ import { PatientProfilePage } from './patients/profile/PatientProfilePage'
 import type { PatientProfileService } from './patients/profile/model'
 import { PatientSearchPage } from './patients/search/PatientSearchPage'
 import type { PatientSearchService } from './patients/search/model'
-import type { PatientRegistrationService } from './patients/types'
+import { appendRecentPatient, updateRecentPatient, type PatientSummary } from './patients/recentPatients'
+import type { Patient, PatientRegistrationService } from './patients/types'
 import { DoctorDirectory } from './staff/DoctorDirectory'
-import type { StaffService } from './staff/types'
+import type { DirectoryServices } from './staff/service'
 
 const leaveMessages = {
   registration: 'Leave patient registration? An unsaved form will be lost. If a registration is in progress, its outcome may be unknown.',
@@ -22,13 +27,15 @@ const leaveMessages = {
 }
 
 // Geçmiş ve yenileme ortak yerleşimde paylaşılır. Korunan ekranların izni rota tanımından gelir.
-function App({ staffService, registrationService, patientSearchService, patientProfileService }: {
-  staffService: StaffService
+function App({ audit, staffManagement, directory, registrationService, patientSearchService, patientProfileService }: {
+  audit: AuditService | null
+  staffManagement: StaffManagementService | null
+  directory: DirectoryServices
   registrationService: PatientRegistrationService
   patientSearchService: PatientSearchService
   patientProfileService: PatientProfileService
 }) {
-  const { role, busy, logout } = useAuth()
+  const { role, sessionMarker, busy, logout } = useAuth()
   // Kayıt ve düzenleme aynı ayrılma denetimini kullanır. Yalnızca açık form uyarı gösterebilir.
   const dirtyForm = useRef<keyof typeof leaveMessages | null>(null)
   const setRegistrationDirty = useCallback((dirty: boolean) => { dirtyForm.current = dirty ? 'registration' : null }, [])
@@ -39,6 +46,24 @@ function App({ staffService, registrationService, patientSearchService, patientP
   const [searchRefreshReady, setSearchRefreshReady] = useState(false)
   const refresh = useCallback(() => setRefreshVersion(previous => previous + 1), [])
   const patientId = readPatientEditPath(route)
+  const [recent, setRecent] = useState<{ session: object; patients: PatientSummary[] } | null>(null)
+  const recentPatients = recent?.session === sessionMarker ? recent.patients : []
+
+  // Önceki girişe ait özetler yeni girişte gösterilmez ve bellekten kaldırılır.
+  useEffect(() => setRecent(null), [sessionMarker])
+
+  function recordRegistration(patient: Patient) {
+    if (!sessionMarker) return
+    setRecent(previous => ({ session: sessionMarker, patients: appendRecentPatient(
+      previous?.session === sessionMarker ? previous.patients : [], patient,
+    ) }))
+  }
+
+  function recordUpdate(patient: Patient) {
+    setRecent(previous => previous && previous.session === sessionMarker
+      ? { ...previous, patients: updateRecentPatient(previous.patients, patient) } : previous)
+    refresh()
+  }
 
   useEffect(() => {
     const title = route === '/foundation' ? 'Architecture foundation'
@@ -55,7 +80,7 @@ function App({ staffService, registrationService, patientSearchService, patientP
     canGoForward,
     onBack: back,
     onForward: forward,
-    onRefresh: route === doctorsPath || route === '/foundation' || (route === patientSearchPath && searchRefreshReady)
+    onRefresh: route === doctorsPath || route === auditLogsPath || route === staffManagementPath || route === '/foundation' || (route === patientSearchPath && searchRefreshReady)
       ? refresh : undefined,
   }
 
@@ -67,22 +92,29 @@ function App({ staffService, registrationService, patientSearchService, patientP
     onNavigate={navigate} navigation={navigation}>
     {route === '/foundation' && <ArchitecturePage refreshVersion={refreshVersion} />}
     {route === '/login' && <LoginPage />}
+    {/* Bu ekranların demo durumu, merkezi rota yetkisini değiştirmez. */}
+    {route === auditLogsPath && <ProtectedRoute path={auditLogsPath}>
+      <AuditLogsPage service={audit} refreshVersion={refreshVersion} />
+    </ProtectedRoute>}
+    {route === staffManagementPath && <ProtectedRoute path={staffManagementPath}>
+      <StaffManagementPage service={staffManagement} refreshVersion={refreshVersion} />
+    </ProtectedRoute>}
     {route === doctorsPath && <ProtectedRoute path={doctorsPath}>
-      <DoctorDirectory service={staffService} refreshVersion={refreshVersion} />
+      <DoctorDirectory directory={directory} refreshVersion={refreshVersion} />
     </ProtectedRoute>}
     {route === registrationPath && <ProtectedRoute path={registrationPath}>
-      <PatientRegistrationPage service={registrationService} onDirtyChange={setRegistrationDirty} />
+      <PatientRegistrationPage service={registrationService} onDirtyChange={setRegistrationDirty} onRegistered={recordRegistration} />
     </ProtectedRoute>}
     {/* Düzenlemeden dönünce ölçütler korunur. İş akışından veya oturumdan çıkınca arama kaldırılır. */}
     {(route === patientSearchPath || patientId !== undefined) && <ProtectedRoute path={patientSearchPath}>
       <div hidden={route !== patientSearchPath}>
         <PatientSearchPage service={patientSearchService} refreshVersion={refreshVersion}
-          onRefreshReady={setSearchRefreshReady} active={route === patientSearchPath} />
+          onRefreshReady={setSearchRefreshReady} active={route === patientSearchPath} recentPatients={recentPatients} />
       </div>
     </ProtectedRoute>}
     {patientId !== undefined && <ProtectedRoute path={route}>
       <PatientProfilePage key={route} patientId={patientId} service={patientProfileService}
-        onDirtyChange={setProfileDirty} onSaved={refresh} />
+        onDirtyChange={setProfileDirty} onSaved={recordUpdate} />
     </ProtectedRoute>}
     {role && route === homePath(role) && <WorkspacePage role={role} />}
   </AppLayout>
