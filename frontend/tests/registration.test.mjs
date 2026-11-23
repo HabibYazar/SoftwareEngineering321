@@ -11,7 +11,7 @@ import { syntheticTurkishNationalId } from './fixtures/turkishNationalId.mjs'
 // Kimlikler ve alanlar yalnızca sentetik test verisidir.
 const validDraft = {
   ...emptyRegistration, firstName: 'Demo', lastName: 'Example', nationalId: syntheticTurkishNationalId('100000042'),
-  dateOfBirth: '2000-02-29', gender: 'Not disclosed', phone: '05000000000', address: 'Synthetic address',
+  dateOfBirth: '2000-02-29', gender: 'Male', phone: '05000000000', address: 'Synthetic address',
   conditionLevel: 'MILD',
 }
 const payload = validateRegistration(validDraft, false).payload

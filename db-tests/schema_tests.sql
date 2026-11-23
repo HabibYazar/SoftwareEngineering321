@@ -398,37 +398,37 @@ END
 $$;
 
 SELECT hms_test.expect_error('US-06', $$INSERT INTO patients (national_id, first_name, last_name, date_of_birth, gender, phone, address, condition_level)
-    VALUES ('10000000146', 'Ayşe', 'Test', NULL, 'Kadın', '0532 000 00 00', 'Adres', 'MILD')$$,
+    VALUES ('10000000146', 'Ayşe', 'Test', NULL, 'Female', '0532 000 00 00', 'Adres', 'MILD')$$,
     'HV001', 'Missing date of birth is reported as column date_of_birth', 'date_of_birth', '%"dataType": "date"%');
 SELECT hms_test.expect_error('US-06', $$INSERT INTO patients (national_id, first_name, last_name, date_of_birth, gender, phone, address, condition_level)
-    VALUES ('123', 'Ayşe', 'Test', '1990-05-01', 'Kadın', '0532 000 00 00', 'Adres', 'MILD')$$,
+    VALUES ('123', 'Ayşe', 'Test', '1990-05-01', 'Female', '0532 000 00 00', 'Adres', 'MILD')$$,
     'HV001', 'National ID must be 11 digits', 'national_id', '%INVALID_FORMAT%');
 SELECT hms_test.expect_error('US-06', $$INSERT INTO patients (national_id, first_name, last_name, date_of_birth, gender, phone, address, condition_level)
-    VALUES ('10000000146', 'Ayşe', 'Test', current_date + 1, 'Kadın', '0532 000 00 00', 'Adres', 'MILD')$$,
+    VALUES ('10000000146', 'Ayşe', 'Test', current_date + 1, 'Female', '0532 000 00 00', 'Adres', 'MILD')$$,
     'HV001', 'Date of birth cannot be in the future', 'date_of_birth', '%OUT_OF_RANGE%');
 SELECT hms_test.expect_error('US-06', $$INSERT INTO patients (national_id, first_name, last_name, date_of_birth, gender, phone, address, condition_level)
-    VALUES ('10000000146', 'Ayşe', 'Test', '1990-05-01', 'Kadın', '0532 000 00 00', 'Adres', 'SEVERE')$$,
+    VALUES ('10000000146', 'Ayşe', 'Test', '1990-05-01', 'Female', '0532 000 00 00', 'Adres', 'SEVERE')$$,
     'HV001', 'Condition level must be MILD, MODERATE or ADVANCED', 'condition_level', '%NOT_ALLOWED%');
 SELECT hms_test.expect_error('US-06', $$INSERT INTO patients (national_id, first_name, last_name, date_of_birth, gender, phone, address, condition_level)
-    VALUES ('10000000146', 'Ayşe', 'Test', '1990-05-01', 'Kadın', 'telefon yok', 'Adres', 'MILD')$$,
+    VALUES ('10000000146', 'Ayşe', 'Test', '1990-05-01', 'Female', 'telefon yok', 'Adres', 'MILD')$$,
     'HV001', 'Invalid phone is rejected', 'phone', '%INVALID_FORMAT%');
 SELECT hms_test.expect_error('US-06', $$INSERT INTO patients (national_id, first_name, last_name, date_of_birth, gender, phone, address, condition_level)
-    VALUES ('10000000146', repeat('a', 101), 'Test', '1990-05-01', 'Kadın', '0532 000 00 00', 'Adres', 'MILD')$$,
+    VALUES ('10000000146', repeat('a', 101), 'Test', '1990-05-01', 'Female', '0532 000 00 00', 'Adres', 'MILD')$$,
     'HV001', 'First name longer than 100 characters is rejected', 'first_name', '%TOO_LONG%');
 
 INSERT INTO patients (national_id, first_name, last_name, date_of_birth, gender, phone, address, condition_level)
-VALUES ('10000000146', 'Ayşe', 'Test', '1990-05-01', 'Kadın', '0532 000 00 00', 'Test Mah. 1', 'MILD')
+VALUES ('10000000146', 'Ayşe', 'Test', '1990-05-01', 'Female', '0532 000 00 00', 'Test Mah. 1', 'MILD')
 RETURNING set_config('hms_test.p1', id::text, true);
 SELECT hms_test.ok('US-06', EXISTS (SELECT 1 FROM patients WHERE id = hms_test.uuid('p1')), 'Valid MILD patient without relative is registered');
 SELECT hms_test.ok('US-03', (SELECT actor = hms_test.uuid('rec') AND details ? 'fields' AND NOT details ? 'national_id'
                              FROM hms_test.last_event('RECORD_CREATE')),
                    'Registration is logged with actor; values are not duplicated into the log');
 SELECT hms_test.expect_error('US-06', $$INSERT INTO patients (national_id, first_name, last_name, date_of_birth, gender, phone, address, condition_level)
-    VALUES ('10000000146', 'Fatma', 'Test', '1980-01-01', 'Kadın', '0532 000 00 01', 'Adres', 'MILD')$$,
+    VALUES ('10000000146', 'Fatma', 'Test', '1980-01-01', 'Female', '0532 000 00 01', 'Adres', 'MILD')$$,
     'HV001', 'A second patient with the same national ID is rejected', 'national_id', '%DUPLICATE%');
 
 SELECT hms_test.expect_error('US-06', $$INSERT INTO patients (national_id, first_name, last_name, date_of_birth, gender, phone, address, condition_level)
-    VALUES ('20000000146', 'Ali', 'Test', '1950-01-01', 'Erkek', '0532 000 00 02', 'Adres', 'ADVANCED')$$,
+    VALUES ('20000000146', 'Ali', 'Test', '1950-01-01', 'Male', '0532 000 00 02', 'Adres', 'ADVANCED')$$,
     'HV001', 'ADVANCED patient without relative cannot be saved', NULL, '%RELATIVE_REQUIRED%');
 
 DO $$
@@ -436,7 +436,7 @@ DECLARE
     v_patient uuid;
 BEGIN
     INSERT INTO patients (national_id, first_name, last_name, date_of_birth, gender, phone, address, condition_level)
-    VALUES ('20000000146', 'Ali', 'Test', '1950-01-01', 'Erkek', '0532 000 00 02', 'Adres', 'ADVANCED')
+    VALUES ('20000000146', 'Ali', 'Test', '1950-01-01', 'Male', '0532 000 00 02', 'Adres', 'ADVANCED')
     RETURNING id INTO v_patient;
     INSERT INTO patient_relatives (patient_id, full_name, relationship, phone)
     VALUES (v_patient, 'Veli Test', 'Oğlu', '0532 000 00 03');
@@ -456,7 +456,7 @@ SELECT hms_test.expect_error('US-06', $$DELETE FROM patient_relatives WHERE pati
     'HV001', 'The relative of an ADVANCED patient cannot be removed', NULL, '%RELATIVE_REQUIRED%');
 SELECT hms_test.ok('US-06', jsonb_array_length(hms_field_errors('patients',
            '{"national_id":"30000000146","first_name":"","last_name":"Test","date_of_birth":"2000-01-01",
-             "gender":"Kadın","phone":"05320000004","address":"Adres","condition_level":"MILD"}'::jsonb)) = 1,
+             "gender":"Female","phone":"05320000004","address":"Adres","condition_level":"MILD"}'::jsonb)) = 1,
        'hms_field_errors() pre-validates a payload without writing');
 SELECT hms_test.expect_error('US-06', $$SELECT patient_delete(hms_test.uuid('p1'), 'Yanlış kayıt')$$,
     'HA403', 'A receptionist cannot delete patients');
