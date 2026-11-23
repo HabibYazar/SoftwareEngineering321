@@ -1,5 +1,6 @@
+%% The doctors read-only SQL view joins staff_members, doctor_departments and departments.
 erDiagram
-    %% HMS Community - physical schema of migrations V1..V3 (US-01, US-03, US-05, US-06, US-08)
+    %% HMS Community - physical schema through Flyway V5. V4 grants doctor directory permission; V5 restricts patient gender to Male/Female.
     %% NULL = not provided (never '' or 0). "cascade" = deleted with the parent (administrator delete with reason).
     ROLES ||--o{ STAFF_MEMBERS : "has role"
     ROLES ||--o{ ROLE_PERMISSIONS : grants
@@ -141,6 +142,7 @@ erDiagram
       text data_type
       boolean required
       integer max_length "NULL = no limit"
+      text_array allowed_values "patients.gender: Male/Female in V5"
     }
     VALIDATION_ERROR_CODES {
       text code PK

@@ -40,6 +40,36 @@ The GitHub Issue states in this baseline were checked on 23 November 2026. Issue
 
 ---
 
+### 1.3 Stakeholders and operating context
+
+- **Receptionists:** register, search and update patients; browse doctors.
+- **Administrators:** access permitted administration functions.
+- **Physicians and other staff:** authenticate and use functions allowed by the role-permission matrix.
+- **Product Owner:** validates requirements and acceptance criteria.
+- **QA team:** verifies requirements through reproducible tests.
+
+### 1.4 External interfaces
+
+- **Web interface:** React and TypeScript, served by Nginx.
+- **REST API:** Spring Boot, JSON, `/api/v1` endpoints.
+- **Authentication:** username/password login and Bearer session tokens.
+- **Database:** PostgreSQL 17 with JDBC and Flyway migrations.
+- **Future external systems:** laboratory devices and national healthcare integrations are outside the Sprint 2 implementation.
+
+### 1.5 Assumptions and constraints
+
+- Only synthetic demonstration records may be used.
+- The prototype is not approved for clinical deployment.
+- Protected operations require appropriate staff permissions.
+- National ID uniqueness is enforced in the database.
+- Architecture is a modular monolith with one backend deployment.
+- Sprint 2 does not implement appointment booking, examinations or laboratory workflows.
+- Quality targets must not be reported as achieved without measurement evidence.
+
+### 1.6 Requirement traceability
+
+Every Sprint 2 parent story is associated with its GitHub Issue, implementation files, verification tests and relevant integration evidence in the [requirements traceability matrix](sprint-2/traceability-matrix.md).
+
 ## 2. Refined Product Backlog (Sprint 2)
 
 The Sprint 2 baseline contains seven parent user stories totaling **35 Story Points**: 32 Must-priority points and 3 Should-priority points. Technical sub-issues do not add separate Story Points.
@@ -58,7 +88,9 @@ The Sprint 2 baseline contains seven parent user stories totaling **35 Story Poi
 
 Detailed prioritization, dependencies, acceptance checkpoints and traceability are recorded in [refined-backlog.md](sprint-2/refined-backlog.md).
 
----## 3. Functional Requirements
+---
+
+## 3. Functional Requirements
 
 ### 3.1 Epic EP-03: Doctor & Staff Management
 
