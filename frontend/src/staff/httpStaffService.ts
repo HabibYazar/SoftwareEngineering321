@@ -47,6 +47,8 @@ export function createHttpStaffService(request: typeof fetch = fetch): StaffServ
       }
 
       if (response.status === 401 || response.status === 403) throw new StaffError('access')
+      // Eksik önizleme uç noktası bir servis kesintisinden farklı gösterilir.
+      if (response.status === 404 || response.status === 405 || response.status === 501) throw new StaffError('unavailable')
       if (response.status !== 200) throw new StaffError('server')
 
       let data: unknown
@@ -56,6 +58,8 @@ export function createHttpStaffService(request: typeof fetch = fetch): StaffServ
         signal?.throwIfAborted()
         throw new StaffError(timeout.aborted ? 'network' : 'response')
       }
+      signal?.throwIfAborted()
+      if (timeout.aborted) throw new StaffError('network')
       return parseClinicians(data)
     },
   }

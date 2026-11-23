@@ -1,210 +1,130 @@
 # Sprint 2 ön yüz ve backend entegrasyonu
 
-| Bilgi | Değer |
-| --- | --- |
-| Yerel worktree | `C:\Users\ardas\Projects\SoftwareEngineering321-Sprint2-Integration-Current` |
-| Yerel dal | `feature/sprint2-frontend-integration-current` |
-| Doğrulanan `origin/develop` tabanı | `4570f80bc96ed39de293c6509a7d1057ba6de193` |
-| Önceki ön yüz kaynağı (US-08 dahil) | `fca4a2122115f45076b08ff077cd825f3d95a299` |
-| Ön yüzün ortak atası | `fa9f79fbb492d838f5a16559403815ee17eaacaf` |
+Bu kılavuz, yerel `feature/sprint2-frontend-polish-admin-demo` dalında `6c2ec00302ce15c34beac1893caa1815334046f5` tabanı üzerine eklenen iyileştirmeleri kapsar. Önceki entegrasyon PR'ları #247 ve #250 ile GitHub sürüm bilgileri kullanıcı tarafından sağlandı. Bu çalışmada uzak depo sorgulanmadı. Birleşmiş sözleşmeler yerel OpenAPI, Java kaynakları ve Flyway şemasından salt okunur kontrol edildi.
 
-Resmî tabanda ortak atadan beri çakışan bir ön yüz farkı bulunmadı. Önceki entegrasyon worktree’sindeki 77 dosyanın içeriği tamamlanmış ön yüz kaynağıyla karşılaştırıldı. Ön yüz yeni tabana dosya bazında aktarıldı. Önceki worktree’ler ve dal uçları korundu. #237–#242, #246 ve #230 resmî tabana birleşmiş durumda. [PostgreSQL PR #246](https://github.com/HabibYazar/SoftwareEngineering321/pull/246) · [Ön yüz SRS PR #230](https://github.com/HabibYazar/SoftwareEngineering321/pull/230)
+## Entegrasyon matrisi
 
-## Kullanıcı hikâyeleri ve HTTP sözleşmesi
+| Hikâye | Metot ve uç nokta | Backend durumu | UI, HTTP servisi ve demo | Erişim | Test ve kalan iş |
+| --- | --- | --- | --- | --- | --- |
+| US-01 | `POST /api/v1/auth/login`, `POST /api/v1/auth/logout` | Birleşmiş | `LoginPage`, `httpAuthService`, `mockAuthService` | Giriş herkese açık. Çıkış ve iş istekleri geçerli Bearer oturumunu kullanır. | Enjekte HTTP, oturum süresi ve çıkış regresyonları. Canlı oturum iptali bu çalışmada denenmedi. |
+| US-02 | Girişte gelen `role`, ayrı izin endpoint'i yok | Birleşmiş rol ve yetkilendirme | `Sidebar`, `WorkspacePage`, `ProtectedRoute`, `authorizedRequest`. Yönetici demosu matrisinin ayrı modeli var. | Hasta işlemleri Administrator ve Receptionist. Dizin Receptionist. Yönetici demoları Administrator. | Tüm roller, doğrudan rota, 401/403 ve geçmiş testleri. Sunucu izinlerin son otoritesidir. |
+| US-06 | `POST /api/v1/patients` | Birleşmiş | `PatientRegistrationPage`, `httpRegistrationService`, `mockRegistrationService` | Yetkili Bearer | Kayıt sağlama denetimi, çift kayıt, 201 yanıtı ve UUID başarı bağlantısı doğrulandı. Canlı kayıt denenmedi. |
+| US-07 | `GET /api/v1/patients?nationalId=…` veya `?name=…` | Birleşmiş arama. Tam liste endpoint'i yok. | `PatientSearchPage`, `httpSearchService`, `mockSearchService` | Yetkili Bearer. Oturum özeti ve demo listesi tarayıcı belleğinde. | Tek ölçüt, boş sonuç, iptal, yeni sentetik kayıt, gerçek modda genel liste isteğinin yokluğu. |
+| US-08 | `GET /api/v1/patients/{patientId}`, `PUT /api/v1/patients/{patientId}` | Birleşmiş | `PatientProfilePage`, `httpProfileService`, `mockProfileService` | Yetkili Bearer ve rota UUID'si | Değişmez kimlik, tam güncelleme, yakın kaldırma, başarısız kayıt ve gezinme iptali testleri. Canlı PUT ve veritabanı denetim kaydı bekliyor. |
+| US-03 | Giriş, çıkış ve hasta işlemlerinin sunucu tarafı olayları | Birleşmiş yazma yolları | Mevcut istemciler işlemleri doğal yollarından çağırır. | Sunucu tarafı | Denetim çıktıları kaynak kodda incelendi. PostgreSQL kaydı bu çalışmada çalıştırılmadı. |
+| US-04 | Henüz onaylı okuma veya filtre uç noktası yok | Eksik | `AuditLogsPage`, `AuditService`, `mockAuditService`. HTTP servisi yok. | Yalnız Administrator ve açık DEV demo bayrağı | Tarih, actor ve action filtreleri, sıralama, boş sonuç, yetki testleri. Sözleşme ve sunucu yetkisi bekliyor. |
+| US-05 | Henüz onaylı hesap yönetimi uç noktası yok | Eksik | `StaffManagementPage`, `StaffManagementService`, `mockStaffManagementService`. HTTP servisi yok. | Yalnız Administrator ve açık DEV demo bayrağı | CRUD benzeri demo işlemleri, reset talebi, son yönetici, bölüm ataması, izin izolasyonu ve sıfır HTTP yazma. Gerçek yönetim sözleşmesi bekliyor. |
+| US-09 klinisyen | `GET /api/v1/staff`, `GET /api/v1/staff?department={name}` | #229 birleşmemiş | `DoctorDirectory`, `httpStaffService`, `mockStaffService` | Receptionist. DEV HTTP önizlemesi mevcut Bearer oturumuyla çağrılır. | Sentetik HTTP, isimle filtre, boş sonuç, iptal ve bağımsız hata. Tablo eşleşmesi ve üretim yetkisi bekliyor. |
+| US-09 departman | `GET /api/v1/departments` | #251 birleşmemiş, yanıt farkı var | `httpDepartmentService` ve ayrı `pr251DepartmentPreview` adaptörü. | Receptionist ön yüz rotası ve ayrı DEV önizleme bayrağı | Kanonik ve geçici yanıt, tekrarlar, boş departman ve kesinti testleri. Kalıcı UUID ve kanonik DTO bekleniyor. |
+| Architecture | `GET /api/v1/health` | Yerel sözleşmede mevcut | `ArchitecturePage`, mevcut sağlık okuması | Açık rota | Görünüm korundu. Canlı sağlık kontrolü bu çalışmada yapılmadı. |
 
-| Hikâye | İstek ve yanıt | Doğrulama |
-| --- | --- | --- |
-| US-01 Personel girişi ve çıkışı | `POST /api/v1/auth/login` → `200 { accessToken, tokenType, role, expiresAt }` · `POST /api/v1/auth/logout` → `204` | Java/OpenAPI incelemesi, sentetik HTTP, demo |
-| US-02 Rol tabanlı gezinme | Ayrı izin uç noktası bulunmuyor. Girişteki `role` yerel gezinmeyi belirliyor. Sunucu her korumalı isteği yeniden yetkilendiriyor. | Yedi rol için rota testleri ve sentetik erişim yanıtları |
-| US-06 Hasta kaydı | `POST /api/v1/patients` → `201 Patient` | Java/OpenAPI incelemesi, sentetik HTTP, demo |
-| US-07 Hasta arama | `GET /api/v1/patients?nationalId=...` veya `GET /api/v1/patients?name=...` → `200 Patient[]` | Java/OpenAPI incelemesi, sentetik HTTP, demo |
-| US-08 Hasta profili | `GET /api/v1/patients/{patientId}` ve `PUT /api/v1/patients/{patientId}` → `200 Patient` | Java/OpenAPI incelemesi, sentetik HTTP, demo |
-| US-09 Doktor dizini | Açık #229 PR’ı `GET /api/v1/staff` ve `GET /api/v1/staff?department=...` tanımlıyor. Yanıt `{ id, displayName, department }[]`. | Hazır HTTP istemcisi sentetik testlerle doğrulandı. Uygulama şu anda dizini yalnızca açık geliştirme demosunda gösteriyor. |
-| US-03 Sunucu denetimi | Ön yüzde yeni uç nokta veya denetim deposu yok. Var olan giriş, çıkış ve hasta işlemleri sunucudaki denetim akışını tetikler. | Kaynak incelemesi. PostgreSQL’deki denetim sonuçları canlı çalıştırılmadı. |
+## Hasta sözleşmesi ve veri sınırı
 
-### Giriş, oturum ve erişim
+Giriş `{ username, password }` gönderir ve `{ accessToken, tokenType, role, expiresAt }` alır. Token bellekte tutulur. Aynı oturumun `401` yanıtı oturumu kapatır. `403` açık oturumu korur. Tema dışında hasta, parola, oturum veya denetim verisi tarayıcı depolamasına yazılmaz.
 
-Giriş gövdesi `{ username, password }`. Korumalı çağrılarda `Authorization: Bearer <accessToken>` kullanılır. Token opaktır, bellekte tutulur ve `expiresAt` doğrulanır. Sayfa yeniden yüklendiğinde yeniden giriş gerekir. Tarayıcının kalıcı deposuna yalnız tema tercihi yazılır. Geçerli oturuma ait `401` oturumu kapatır. `403` oturumu korur. İptal edilmiş veya eski bir isteğin `401` yanıtı daha yeni oturumu kapatamaz. Çıkışta `401`, oturumun sunucuda zaten geçersiz olduğu durum olarak ele alınır.
+`NewPatient`, ad, soyad, `nationalId`, doğum tarihi, cinsiyet, telefon, adres, koşul seviyesi ve isteğe bağlı `relativeInformation` içerir. `Patient` yanıtına UUID `id` eklenir. Profilin `PUT` gövdesi düzenlenebilir alanların tamamını gönderir. Kimlik numarası ve `id` gövdeye girmez. Mild ve Moderate için kullanıcı açıkça kaldırırsa yakın alanı atlanır. Advanced seviyesinde üç yakın alanı zorunludur. `400` alan hataları ve `409` çift kimlik hatası korunur.
 
-`StaffRole` ve `Permission` yedi personel rolünü ve izin adlarını tanımlar. `V3__patients.sql` ile `has_permission` kaynakları hasta kayıt, arama, okuma ve güncelleme için Receptionist ve Administrator erişimini doğruluyor. Kalan roller ve bilinmeyen izinler mevcut hasta rotalarında varsayılan olarak reddedilir. Giriş yanıtı ayrıntılı izin listesi içermediğinden yerel menü doğrulanmış başlangıç izinlerine dayanır. Geçerli sunucu erişim kararını veritabanı yapar. Doktor demosu Receptionist rolünde kalır.
+Yeni US-06 kaydında ön yüz tam 11 ASCII rakam, sıfır olmayan ilk hane ve 10. ile 11. sağlama hanelerini zorunlu tutar. Geçersiz giriş POST'a ulaşmaz. Java, OpenAPI ve veritabanı sözleşmesi hâlâ 11 rakam denetler. Eski kimliklerle US-07 araması ve US-08 profil yükleme/düzenleme çalışır. Profil kimliği değişmez. Ürün Sahibi onayı ve sunucu tarafı zorunluluğu ayrı kararlardır. Testler yeni kayıt için deterministik sentetik değerler, geriye uyumluluk için mevcut sentetik kimlikleri kullanır. Sağlama, matematiksel tutarlılığı denetler. Resmî doğrulama hizmeti çağrılmaz. [US-06 kimlik denetimi](../US-06-frontend.md#national-id-validation-boundary)
 
-İlgili kaynaklar `api/openapi.yaml`, `AuthController.java`, `LoginRequest.java`, `LoginResponse.java`, `AuthenticationService.java`, `AccessTokenService.java`, `JdbcStaffAccountDirectory.java`, `JdbcStaffSessionStore.java`, `HttpSecurityConfiguration.java`, `StaffRole.java` ve rol/izin migrasyonlarıdır.
+Cinsiyet seçimi Male, Female, Other ve Prefer not to disclose seçeneklerini sunar. Son seçenek `Not disclosed` değerini gönderir. Backend sözleşmesi serbest string alanıdır. Ürün Sahibi seçenekleri henüz onaylamadı. Eski bilinmeyen değer görünür kalır ve kullanıcı seçim yapana kadar gönderilemez. Hasta ve yakın telefonları `05XX XXX XX XX` biçiminde gösterilir. Fazla haneli yapıştırma kesilmeden reddedilir. POST ve PUT, geçerli yerel numarayı `+905XXXXXXXXX` biçiminde gönderir. Daha geniş eski telefonlar düzeltilmeden kaydedilmez.
 
-### Hasta gövdeleri ve hata durumları
+## Yılmaz'ın yerel referansları ve engeller
 
-- `NewPatient` alanları `firstName`, `lastName`, `nationalId`, `dateOfBirth`, `gender`, `phone`, `address`, `conditionLevel` ve varsa `relativeInformation`. `Patient` bu alanlara UUID biçimli `id` ekler. Kayıtta `201` yanıtındaki ulusal kimlik gönderilen değerle eşleşmelidir. `409` çift kimlik uyarısı verir.
-- Arama çağrısı tek bir ölçüt gönderir. Kimlik tam 11 rakamla aranır. Kısmi ad araması, birden fazla sonuç ve boş `[]` desteklenir. Kimlik aramasından farklı kimlik veya birden fazla kayıt dönerse yanıt geçersiz sayılır. Güncel sorgudan önceki istekler arayüzü değiştiremez.
-- Tam değiştirme yapan `PUT` gövdesi bütün düzenlenebilir alanları içerir. `id` ve `nationalId` yalnız yanıttadır. Mild veya Moderate profilde mevcut yakın bilgisi korunur. Kullanıcı yakını açıkça kaldırırsa `relativeInformation` gövdeden çıkarılır. Advanced için `fullName`, `relationship` ve `phone` zorunludur. İki form da `1900-01-01` alt sınırını, geçerli takvim gününü, telefon biçimini ve uzunlukları doğrular. Kaydedilen yanıtta hem UUID hem ulusal kimlik kontrol edilir.
-- `application/problem+json` alan hataları ön yüzde sabit İngilizce mesajlara eşlenir. Kullanıcıya ham yanıt gövdesi gösterilmez. `400`, `401`, `403`, `404`, `409`, `500` ve `503` ilgili akışta ele alınır. HTTP istemcilerinde 15 saniyelik zaman aşımı vardır. Bozuk yanıt veya ağ hatası sentetik başarı üretmez. `503 INTEGRATION_PENDING` veritabanı bağlantısı yapılandırılmadığında görülebilir.
-- Okunan kaynaklar `PatientController.java`, `PatientRequest.java`, `PatientDetails.java`, `RelativeInformation.java`, `PatientValidator.java`, `PatientService.java`, `JdbcPatientRepository.java`, `ApiExceptionHandler.java`, `ApiProblems.java` ve `FieldViolation.java`.
-
-### PostgreSQL ve US-03
-
-Birleşen #246, yapılandırılmış PostgreSQL veri kaynağı varsa personel hesabı ve oturumu, hasta deposu ve kalıcı denetim adaptörlerini seçer. `application.yml` içindeki `HMS_DB_URL` ayarı ve Flyway migrasyonları okundu. `AuditService.java`, `JdbcAuditEventStore.java` ve SQL denetim işlevleri giriş, çıkış, hasta görüntüleme ve değişiklik olayları için kaynak olarak incelendi. Hasta güncellemesinin önceki ve sonraki değerleri sunucuya aittir. Ön yüz bu kayıtları üretmez veya tarayıcı deposuna yazmaz.
-
-Doğrulama sırasında hazır, yetkilendirilmiş sentetik hesap ve uyumlu yerel PostgreSQL backend’i bulunmadı. Java, Docker ve Flyway başlatılmadı. Veritabanı işlemi yapılmadı. Gerçek giriş, rol yetkilendirmesi, hasta kaydı/güncellemesi ve kalıcı denetim sonuçları uygun bir düzende doğrulanmayı bekliyor.
-
-### US-09 açık PR’ları ve şema uyuşmazlığı
-
-#229’daki `StaffController.java`, `StaffService.java`, `StaffRepository.java` ve testleri incelendi. Depo `clinicians` tablosundaki `row_num`, `id`, `display_name` ve `department` alanlarını kullanır. Departman filtresi eşitlik ile çalışır. Ayrı bir departman uç noktası yoktur. Ön yüz seçenekleri mevcut klinisyenlerden türetir ve klinisyensiz departmanları gösteremez. PR’daki herkese açık güvenlik kuralı resmî tabanın varsayılan ret yaklaşımıyla uyumlu hale getirilmelidir. [Doktor dizini PR #229](https://github.com/HabibYazar/SoftwareEngineering321/pull/229)
-
-#228’deki `clinicians.csv`, `departments.csv` ve `init_and_seed.sql` yalnızca okundu. Resmî V1 şemasında `staff_members`, `doctor_departments` ve `departments(id, name, is_active, …)` var. `clinicians` yok. Seed betiği aynı `departments` tablosunu `row_num`, `group_name`, `clinician_count` ve `source_url` sütunlarıyla bekliyor. `CREATE TABLE IF NOT EXISTS` mevcut tabloya eksik sütun eklemez ve ardından gelen `COPY` uyumsuz kalır. İki PR’ın resmî şema, rol ve veri yükleme kurallarıyla uyumu backend tarafında çözülmelidir. Güncel tabanda istemci doktora ait HTTP çağrısı göndermeden uç noktanın kullanılamadığını bildirir. [Tohum veri PR #228](https://github.com/HabibYazar/SoftwareEngineering321/pull/228)
+- **#229**, `feature/204-expose-department-and-filtered-doctor-lists`, `95d5ebbed979f07f90d217023d0f8b6f65fabb53`. Yerel `backend/src/main/java/org/hmscommunity/staff/StaffController.java`, `StaffService.java`, `StaffRepository.java`, `backend/src/test/java/org/hmscommunity/staff/StaffControllerTest.java` ve `docs/architecture/US-09-backend-architecture.md` referansları. Dizi `{ id, displayName, department }` döndürür. Sorgu parametresi departman adıdır. `clinicians` tablosu mevcut V1'de yok, karşılık gelen resmî yapı `staff_members`, `departments` ve `doctor_departments`. PR'daki public GET önerisinin üretim yetkisi ayrıca onaylanmalıdır. [PR #229](https://github.com/HabibYazar/SoftwareEngineering321/pull/229)
+- **#251**, `spec/api-departments-spec`, `01706b5a730a618fc463096c8f1eeb506a6d163b`. Commit yerelde yok, aşağıdaki bilgiler kullanıcının verdiği sözleşmeden alındı. İlgili yollar `backend/src/main/java/org/hmscommunity/departments/DepartmentsController.java`, `DepartmentsService.java`, `DepartmentsRepository.java` ve `api/openapi.yaml`. Kanonik `{ id, name }[]` yerine geçici controller `{ id, department }[]` döndürüyor, 10 örnek ve her istekte yeni UUID üretiyor, repository kataloğunu kullanmıyor. `/departments` adresi kullanılmaz. Son sürüm kanonik alanı, sabit UUID'leri ve onaylı sunucu yetkilendirmesini sağlamalıdır. [PR #251](https://github.com/HabibYazar/SoftwareEngineering321/pull/251)
+- **#227** `devops/221-docker-containerization` yalnızca altyapı referansıdır. **#228** Flyway sonrasında birleşmeden kapatılmış eski seed çalışmasıdır. Ön yüz hiçbir CSV veya eski seed varsaymaz. [PR #227](https://github.com/HabibYazar/SoftwareEngineering321/pull/227) · [PR #228](https://github.com/HabibYazar/SoftwareEngineering321/pull/228)
 
 ## Yerel doğrulama
 
-PowerShell’de:
+[Ön yüz README](../../README.md), açık DEV demo bayrakları ve sentetik hesapları içerir. US-09 için `VITE_STAFF_MOCK=false` ayarlanır ve `VITE_STAFF_HTTP_PREVIEW=true` ile `VITE_DEPARTMENTS_HTTP_PREVIEW=true` birbirinden bağımsız seçilir. Geçici #251 biçimi için ayrıca `VITE_DEPARTMENTS_PR251_COMPAT=true` gerekir. Varsayılanda önizleme kapalıdır. Başarılı departman kataloğu sıfır doktorlu bölümleri de gösterir. Ayrı departman servisi çalışmazsa kullanılabilir doktor listesinden isimler türetilir ve hata açıkça gösterilir. İki API birbirinin kesintisini gizlemez.
 
-```powershell
-Set-Location 'C:\Users\ardas\Projects\SoftwareEngineering321-Sprint2-Integration-Current\frontend'
-# node_modules henüz yoksa mevcut kilitli bağımlılıkları kurun.
-# npm.cmd ci
-npm.cmd test
-node --test tests/backend-integration.test.mjs
-npm.cmd run build
-git diff --check
-```
+`npm.cmd test` tüm Node ve yerel Vite bileşen testlerini çalıştırır. `npm.cmd run build` TypeScript ve Vite üretim derlemesini doğrular. Mevcut kilitli sürümler ve kurulu araçlar tekrar kullanıldı. [Teknoloji sürümleri](../TECH_STACK.md)
 
-Üretim derlemesinin oluşturduğu `frontend/tsconfig.app.tsbuildinfo` bu tabanın Git kurallarında takip dışı görünebilir. Yerel dosya kapsamı kontrolünden önce kendi derlemenizin ürettiği bu önbelleği depo dışına taşıyabilirsiniz.
+- Kimlik denetimi sonrasında tam paket 123/123 geçti. Önceki 117 test ilk 11 rakam kuralından yeni kayıt kuralına uyarlanan sentetik girdilerle korundu ve 6 odaklı test eklendi. Kapsam ilk hane, iki sağlama hanesi, negatif mod, odak geri bildirimi, POST engeli, 409 ve eski kayıt uyumluluğunu içerir.
+- Yerel telefon biçimi ve giriş sınırı eklendikten sonra 127/127 test geçti.
+- TypeScript denetimi ve Vite 7.3.8 üretim derlemesi geçti. Tüm DEV bayrakları açık verilerek yapılan üretim derlemesi, taranan demo parola/veri işaretlerini ve US-09 önizleme GET adreslerini içermedi.
+- Yerel Chrome denetiminde başı sıfır olan yeni kayıt girdisi odaktan çıkınca hata verdi. 12 haneli giriş kesilmedi ve düzeltilince hata yazarken kalktı. Dört İngilizce cinsiyet seçeneği görüldü. Eski sentetik kimlik tam aramayla bulundu ve profil kimliği korunarak demo kaydı yapıldı. Açık/koyu görünüm, dar düzende tek sütun ve açılır menü ile iki Administrator demo ekranı açılarak kontrol edildi. Düzeneğin oturumu sentetikti. Canlı Spring Boot/PostgreSQL, gerçek giriş ve yeni kaydın tam tarayıcı gönderimi bu denetimde denenmedi.
+- Derleme ve testler doğrulanmış geçici ön yüz kopyasında yürütüldü. Paket dosyaları, derleme çıktıları veya TypeScript önbelleği değişiklik listesine dahil edilmedi.
 
-Demo için aynı dizinde beş bayrağı geliştirme oturumunda birlikte açın. Ön yüz README dosyasındaki sentetik Receptionist hesabıyla giriş yapın. Doktor dizininde filtre ve yenilemeyi, hasta formunda sentetik kayıt, arama ve profil düzenlemeyi deneyin.
+## Bu artışta değişen ön yüz dosyaları
 
-```powershell
-$env:VITE_AUTH_MOCK = 'true'
-$env:VITE_STAFF_MOCK = 'true'
-$env:VITE_PATIENT_REGISTRATION_MOCK = 'true'
-$env:VITE_PATIENT_SEARCH_MOCK = 'true'
-$env:VITE_PATIENT_PROFILE_MOCK = 'true'
-npm.cmd run dev -- --host 127.0.0.1
-```
-
-Gerçek HTTP modunu ancak yetkili bir sentetik hesap ve önceden çalışan uyumlu yerel backend varsa deneyin. Yukarıdaki beş değeri `'false'` yapıp Vite’ı yeniden başlatın. Korunan Vite ayarı `/api` isteklerini `http://localhost:8080` adresine yönlendirir. Demo hesabını gerçek servise göndermeyin. Başarılı canlı doğrulama için kayıt, sorgu, güncelleme, çıkış ve sunucu tarafı denetim sonuçları ayrı ayrı kontrol edilmelidir. Bu adımlar veritabanı hazırlama veya sunucu başlatma yetkisi vermez.
-
-## Test ve Git sonuçları
-
-- Tam otomatik paket 95/95, odaklı HTTP sözleşme paketi 8/8 geçti. Odaklı testler tam paketin içindedir.
-- TypeScript denetimi ve Vite üretim derlemesi geçti. Kilitli mevcut bağımlılıklar yeniden kullanıldı. Üretim çıktısında demo hesapları, demo parolası ve sentetik kayıt örnekleri için metin taraması yapıldı.
-- Yalnızca 127.0.0.1 üzerinde çalışan geçici sentetik HTTP düzeneğinde giriş ve çıkış, 503 geri bildirimi, hasta kaydı, tam kimlik araması, UUID ile profil, güncelleme, 503 sonrası taslak koruması ve güncellenen adla arama geçti. Bu düzenek Spring Boot veya bir veritabanı kullanmadı.
-- Uygulamanın geliştirme demosunda Administrator hasta menüsü, Physician doğrudan rota reddi ve Receptionist doktor filtresi ile yenileme geçti. Klavye ile form gönderimi, tema ve menü kontrolleri çalıştı. Profilde 768 px koyu ve 390 px açık görünüm yatay taşma göstermedi. Tema tercihi yeniden yüklemede korundu.
-- Git kapsamı dört izlenen dosya değişikliği ve 77 yeni dosyadan oluşur. İndeks boş. İzlenen ve yeni dosyalarda whitespace denetimi uygulandı. Korunan yollar, önceki worktree’ler ve dal uçları korundu.
-
-## Entegrasyon için güncellenen dosyalar
-
-Aşağıdaki yollar, tamamlanmış US-08 ön yüz kaynak ağacına göre eklenen veya entegrasyon için uyarlanan dosyalardır.
-
-- `frontend/README.md`
-- `frontend/docs/backend-integration/README.md`
-- `frontend/src/apiProblem.ts`
-- `frontend/src/auth/AuthProvider.tsx`
-- `frontend/src/auth/authorizedRequest.ts`
-- `frontend/src/auth/httpAuthService.ts`
-- `frontend/src/auth/mockAuthService.ts`
-- `frontend/src/auth/permissions.ts`
-- `frontend/src/auth/session.ts`
-- `frontend/src/auth/types.ts`
-- `frontend/src/main.tsx`
-- `frontend/src/patients/PatientRegistrationPage.tsx`
-- `frontend/src/patients/httpRegistrationService.ts`
-- `frontend/src/patients/patientProblem.ts`
-- `frontend/src/patients/profile/PatientProfilePage.tsx`
-- `frontend/src/patients/profile/httpProfileService.ts`
-- `frontend/src/patients/profile/model.ts`
-- `frontend/src/patients/profile/saveRunner.ts`
-- `frontend/src/patients/search/httpSearchService.ts`
-- `frontend/src/patients/search/model.ts`
-- `frontend/src/patients/types.ts`
-- `frontend/src/patients/validation.ts`
-- `frontend/src/staff/service.ts`
-- `frontend/src/staff/types.ts`
-- `frontend/src/staff/useClinicians.ts`
-- `frontend/tests/auth.test.mjs`
-- `frontend/tests/backend-integration.test.mjs`
-- `frontend/tests/patient-profile.test.mjs`
-- `frontend/tests/patient-search.test.mjs`
-- `frontend/tests/permissions.test.mjs`
-- `frontend/tests/registration.test.mjs`
-
-## Resmî tabana göre tam dosya envanteri
-
-81 dosya, önceki hikâyelerin aktarılan kaynaklarını, belgelerini, testlerini ve entegrasyon değişikliklerini içerir. Mevcut tasarım, gezinme, açık/koyu tema ve hasta formlarının yapısı korundu. Herhangi bir yeni npm bağımlılığı eklenmedi. Paket bildirimindeki komut farkı test betiğidir.
+### Güncellenen
 
 - `frontend/.env.example`
 - `frontend/README.md`
 - `frontend/docs/TECH_STACK.md`
-- `frontend/docs/US-01-frontend.md`
 - `frontend/docs/US-02-frontend.md`
 - `frontend/docs/US-06-frontend.md`
 - `frontend/docs/US-07-frontend.md`
 - `frontend/docs/US-08-frontend.md`
 - `frontend/docs/US-09-frontend.md`
 - `frontend/docs/backend-integration/README.md`
-- `frontend/package-lock.json`
-- `frontend/package.json`
 - `frontend/src/App.tsx`
-- `frontend/src/apiProblem.ts`
 - `frontend/src/auth/AuthProvider.tsx`
-- `frontend/src/auth/LoginPage.tsx`
-- `frontend/src/auth/ProtectedRoute.tsx`
-- `frontend/src/auth/authorizedRequest.ts`
-- `frontend/src/auth/httpAuthService.ts`
-- `frontend/src/auth/mockAuthService.ts`
 - `frontend/src/auth/permissions.ts`
 - `frontend/src/auth/routing.ts`
-- `frontend/src/auth/service.ts`
-- `frontend/src/auth/session.ts`
-- `frontend/src/auth/types.ts`
-- `frontend/src/components/AppLayout.tsx`
-- `frontend/src/components/NavigationControls.tsx`
-- `frontend/src/components/Sidebar.tsx`
 - `frontend/src/components/ui.tsx`
 - `frontend/src/main.tsx`
-- `frontend/src/navigation/history.ts`
-- `frontend/src/navigation/useAppNavigation.ts`
 - `frontend/src/pages/ArchitecturePage.tsx`
 - `frontend/src/pages/WorkspacePage.tsx`
 - `frontend/src/patients/PatientDetailFields.tsx`
 - `frontend/src/patients/PatientRegistrationPage.tsx`
-- `frontend/src/patients/httpRegistrationService.ts`
 - `frontend/src/patients/mockPatientStore.ts`
-- `frontend/src/patients/mockRegistrationService.ts`
 - `frontend/src/patients/patientProblem.ts`
 - `frontend/src/patients/profile/PatientProfilePage.tsx`
-- `frontend/src/patients/profile/httpProfileService.ts`
-- `frontend/src/patients/profile/mockProfileService.ts`
 - `frontend/src/patients/profile/model.ts`
-- `frontend/src/patients/profile/profile.css`
-- `frontend/src/patients/profile/saveRunner.ts`
-- `frontend/src/patients/profile/service.ts`
 - `frontend/src/patients/registration.css`
 - `frontend/src/patients/search/PatientSearchPage.tsx`
-- `frontend/src/patients/search/httpSearchService.ts`
 - `frontend/src/patients/search/mockSearchService.ts`
 - `frontend/src/patients/search/model.ts`
 - `frontend/src/patients/search/search.css`
-- `frontend/src/patients/search/searchRunner.ts`
-- `frontend/src/patients/search/service.ts`
-- `frontend/src/patients/service.ts`
-- `frontend/src/patients/types.ts`
-- `frontend/src/patients/useUnsavedPatientForm.ts`
 - `frontend/src/patients/validation.ts`
 - `frontend/src/staff/DoctorDirectory.tsx`
 - `frontend/src/staff/directory.css`
-- `frontend/src/staff/filtering.ts`
 - `frontend/src/staff/httpStaffService.ts`
-- `frontend/src/staff/mockStaffService.ts`
 - `frontend/src/staff/service.ts`
 - `frontend/src/staff/types.ts`
 - `frontend/src/staff/useClinicians.ts`
 - `frontend/src/style.css`
-- `frontend/src/theme/ThemeToggle.tsx`
-- `frontend/src/theme/preference.ts`
 - `frontend/src/theme/tokens.css`
 - `frontend/src/vite-env.d.ts`
-- `frontend/tests/auth.test.mjs`
 - `frontend/tests/backend-integration.test.mjs`
-- `frontend/tests/fixtures/staff-refresh-server.mjs`
-- `frontend/tests/navigation.test.mjs`
 - `frontend/tests/patient-profile.test.mjs`
 - `frontend/tests/patient-search.test.mjs`
 - `frontend/tests/permissions.test.mjs`
 - `frontend/tests/registration.test.mjs`
 - `frontend/tests/staff.test.mjs`
+
+### Eklenen
+
+- `frontend/docs/US-04-frontend.md`
+- `frontend/docs/US-05-frontend.md`
+- `frontend/src/admin/admin.css`
+- `frontend/src/admin/audit/AuditLogsPage.tsx`
+- `frontend/src/admin/audit/mockAuditService.ts`
+- `frontend/src/admin/audit/model.ts`
+- `frontend/src/admin/service.ts`
+- `frontend/src/admin/staff/StaffForm.tsx`
+- `frontend/src/admin/staff/StaffManagementPage.tsx`
+- `frontend/src/admin/staff/StaffSettings.tsx`
+- `frontend/src/admin/staff/mockStaffManagementService.ts`
+- `frontend/src/admin/staff/model.ts`
+- `frontend/src/components/resourceRequest.ts`
+- `frontend/src/components/useResource.ts`
+- `frontend/src/patients/RegistrationSuccess.tsx`
+- `frontend/src/patients/fieldFeedback.ts`
+- `frontend/src/patients/formOptions.ts`
+- `frontend/src/patients/recentPatients.ts`
+- `frontend/src/patients/registrationAttempt.ts`
+- `frontend/src/patients/search/PatientResultList.tsx`
+- `frontend/src/patients/useFieldFeedback.ts`
+- `frontend/src/staff/departments.ts`
+- `frontend/src/staff/httpDepartmentService.ts`
+- `frontend/src/staff/pr251DepartmentPreview.ts`
+- `frontend/src/staff/previewMode.ts`
+- `frontend/tests/admin-demo.test.mjs`
+- `frontend/tests/directory-preview.test.mjs`
+- `frontend/tests/fixtures/turkishNationalId.mjs`
+- `frontend/tests/patient-polish.test.mjs`
+- `frontend/tests/polish-ui.test.mjs`
+- `frontend/tests/turkish-national-id.test.mjs`

@@ -16,7 +16,7 @@ public record PatientDetails(
     @NotBlank @Size(max = 100) String firstName,
     @NotBlank @Size(max = 100) String lastName,
     @NotNull @PastOrPresent LocalDate dateOfBirth,
-    @NotBlank @Size(max = 40) String gender,
+    @NotBlank @Size(max = 40) @Pattern(regexp = "Male|Female|\\s*") String gender,
     @NotBlank @Size(max = 32) @Pattern(regexp = PHONE_PATTERN) String phone,
     @NotBlank @Size(max = 500) String address,
     @NotNull ConditionLevel conditionLevel,

@@ -1,0 +1,76 @@
+/* Filtre ve tablolar aynı çalışma yüzeyindedir. Geniş tablolar kendi bölgesinde kayar. */
+.admin-page { display: grid; gap: var(--space-5); }
+.admin-page .page-heading, .admin-page .alert { margin: 0; }
+.admin-heading-row, .admin-actions, .admin-feedback { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.admin-heading-row { justify-content: space-between; margin-bottom: var(--space-4); }
+.admin-heading-row h2 { margin: 0; }
+.admin-filters {
+  display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  padding: var(--space-4); background: var(--inset); border-radius: var(--control-radius); border: 1px solid var(--border);
+}
+.admin-filters > .admin-actions { grid-column: 1 / -1; padding-top: var(--space-3); border-top: 1px solid var(--border); }
+.staff-filters { margin-bottom: var(--space-5); }
+.admin-edit-card { border-top: 3px solid var(--accent-secondary); }
+.admin-edit-card button[type="submit"] { padding-inline: var(--space-6); }
+.table-scroll, .permission-region { max-width: 100%; overflow: auto; border: 1px solid var(--border); border-radius: var(--control-radius); }
+.table-scroll:focus-visible, .permission-region:focus-visible { outline-offset: 2px; }
+.data-table { border-collapse: collapse; inline-size: 100%; text-align: start; margin: 0; }
+.data-table th, .data-table td {
+  padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); text-align: start;
+  vertical-align: middle; overflow-wrap: anywhere;
+}
+.data-table thead { background: var(--inset); color: var(--muted); font-size: 0.875rem; }
+.data-table tbody tr:nth-child(even) { background: var(--inset); }
+.data-table tbody tr:last-child > * { border-bottom: 0; }
+.data-table tbody tr { transition: background-color var(--motion); }
+.data-table tbody tr:focus-within, .data-table tbody tr:hover { background: var(--surface-hover); }
+.data-table td time { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.data-table th small { display: block; font-weight: 500; margin-top: var(--space-1); }
+.data-table input[type="checkbox"] { accent-color: var(--accent); inline-size: 1.125rem; block-size: 1.125rem; }
+.audit-table { min-width: 46rem; }
+/* Kimlikler ve roller kaydırılabilir tabloda kelime ortasında bölünmez. */
+.audit-table td:nth-child(2), .audit-table td:nth-child(3) { white-space: nowrap; }
+.audit-table td:nth-child(4) { min-width: 8rem; overflow-wrap: normal; }
+.audit-table td:nth-child(5) { min-width: 9rem; }
+.staff-table { min-width: 39rem; }
+.staff-table th[scope="row"] { min-width: 9rem; }
+.staff-table .admin-actions { min-inline-size: 15rem; }
+.staff-table .button { padding-inline: var(--space-2); font-size: 0.88rem; }
+.status-chip, .role-chip {
+  display: inline-flex; align-items: center; gap: var(--space-2); border: 1px solid var(--border); border-radius: 999px;
+  color: var(--muted); background: var(--inset); padding: var(--space-1) var(--space-3); font-size: 0.875rem;
+}
+.status-chip { white-space: nowrap; }
+.status-chip[data-status]::before { content: ''; width: 0.42rem; aspect-ratio: 1; border-radius: 50%; background: currentColor; }
+.status-chip[data-status="Active"], .status-chip[data-status="Success"] { color: var(--success); background: var(--success-bg); }
+.status-chip[data-status="Denied"] { color: var(--error); background: var(--error-bg); }
+.role-chip { color: var(--accent-secondary); background: var(--info-bg); white-space: nowrap; }
+.department-names { display: flex; flex-wrap: wrap; gap: var(--space-2); list-style: none; padding: 0; }
+.assignment-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); }
+.assignment-grid > fieldset { min-width: 0; margin: 0; padding: var(--space-3); background: var(--inset); border: 1px solid var(--border); border-radius: var(--control-radius); }
+.assignment-grid legend { padding-inline: var(--space-2); font-weight: 700; }
+.assignment-grid .registration-checkbox + .registration-checkbox { border-top: 1px solid var(--border); }
+
+/* Dar ekranlarda sütun etiketleri her izin kontrolünün yanında gösterilir. */
+.permission-table { table-layout: fixed; min-width: 36rem; }
+.permission-table th, .permission-table td { padding-inline: var(--space-2); }
+.permission-table th:first-child { width: 19%; padding-inline-start: var(--space-3); }
+.permission-table th:not(:first-child) { text-align: center; }
+.permission-table td { padding-block: var(--space-1); }
+.permission-control { display: flex; justify-content: center; align-items: center; min-height: 44px; }
+.permission-control input { flex: none; }
+.permission-table tbody td:focus-within { background: var(--accent-soft); }
+.permission-control > span { display: none; }
+@media (max-width: 51rem) {
+  .permission-region { overflow: visible; border: 0; }
+  .permission-table, .permission-table tbody { display: block; width: 100%; min-width: 0; }
+  .permission-table thead { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+  .permission-table tbody { display: grid; gap: var(--space-3); }
+  .permission-table tbody tr { display: grid; border: 1px solid var(--border); border-radius: var(--control-radius); background: var(--inset); }
+  .permission-table tbody tr:hover { background: var(--inset); }
+  .permission-table tbody tr > th:first-child { width: 100%; padding: var(--space-3); border-bottom: 1px solid var(--border); color: var(--accent-secondary); }
+  .permission-table tbody tr > td { padding: 0 var(--space-3); border-bottom: 1px solid var(--border); }
+  .permission-table tbody tr > td:last-child { border-bottom: 0; }
+  .permission-control { justify-content: start; gap: var(--space-3); padding-block: var(--space-2); font-weight: 560; }
+  .permission-control > span { display: inline; }
+}

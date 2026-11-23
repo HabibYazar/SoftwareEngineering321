@@ -37,7 +37,7 @@ test('an empty staff array is a successful result', async () => {
 
 // Ham hata içeriği, ayrıştırma veya HTTP hatasında kullanıcıya yansımaz.
 test('staff errors never expose raw response content or activate demo data', async () => {
-  for (const [status, code] of [[401, 'access'], [403, 'access'], [404, 'server'], [500, 'server']]) {
+  for (const [status, code] of [[401, 'access'], [403, 'access'], [404, 'unavailable'], [500, 'server']]) {
     const service = createHttpStaffService(async () => new Response('server detail', { status }))
     await assert.rejects(service.listClinicians(null), error => error.code === code && !error.message.includes('server detail'))
   }
@@ -87,10 +87,12 @@ test('the demo staff service filters synthetic records by department', async () 
   assert.deepEqual(await service.listClinicians('Unknown'), [])
 })
 
-test('only Receptionist may open the doctor directory', () => {
+// V4 DOCTOR_DIRECTORY_VIEW: Receptionist'e verilir, Administrator veritabanında her izne sahiptir.
+test('only Receptionist and Administrator may open the doctor directory', () => {
   assert.equal(resolvePath(doctorsPath, null), '/login')
   for (const role of roles) {
-    assert.equal(canViewDoctors(role), role === 'Receptionist')
-    assert.equal(resolvePath(doctorsPath, role), role === 'Receptionist' ? doctorsPath : homePath(role))
+    const allowed = role === 'Receptionist' || role === 'Administrator'
+    assert.equal(canViewDoctors(role), allowed)
+    assert.equal(resolvePath(doctorsPath, role), allowed ? doctorsPath : homePath(role))
   }
 })

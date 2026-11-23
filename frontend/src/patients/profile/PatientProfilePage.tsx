@@ -4,8 +4,9 @@ import { patientSearchPath } from '../../auth/routing'
 import { Alert, Button, Card } from '../../components/ui'
 import { PatientDetailFields, PatientRelativeFields } from '../PatientDetailFields'
 import type { Patient } from '../types'
+import { useFieldFeedback } from '../useFieldFeedback'
 import { useUnsavedPatientForm } from '../useUnsavedPatientForm'
-import type { PatientDetailsDraft, PatientDetailsErrors, PatientDetailsField } from '../validation'
+import type { PatientDetailsDraft, PatientDetailsField } from '../validation'
 import { draftFromPatient, isProfileDirty, PatientProfileError, validateProfile, type PatientProfileService } from './model'
 import { createProfileSaver } from './saveRunner'
 import { patientProfileMockEnabled } from './service'
@@ -14,7 +15,7 @@ import './profile.css'
 interface ProfileProps {
   service: PatientProfileService
   onDirtyChange: (dirty: boolean) => void
-  onSaved: () => void
+  onSaved: (patient: Patient) => void
 }
 
 type LoadState = { status: 'loading' } | { status: 'ready'; patient: Patient } | { status: 'error'; error: PatientProfileError }
@@ -54,17 +55,18 @@ export function PatientProfilePage({ patientId, ...props }: ProfileProps & { pat
   return <section className="intro registration patient-profile" aria-labelledby="page-title">
     <div className="page-heading">
       <h1 id="page-title" tabIndex={-1}>Edit patient profile</h1>
+      {record.status === 'ready' && <p className="muted">{record.patient.firstName} {record.patient.lastName}</p>}
     </div>
     {patientProfileMockEnabled && <Alert tone="warning">Demo profile editing is active. Records are synthetic and temporary.</Alert>}
     {!service.canUpdate && <Alert tone="warning">{new PatientProfileError('unavailable').message}</Alert>}
-    <Card>
+    <Card className={record.status === 'ready' && !error ? 'form-surface' : undefined}>
       {error ? <div className="profile-actions">
         <Alert tone="error">{error.message}</Alert>
         <div className="profile-buttons">
           {(error.code === 'network' || error.code === 'server') && <Button onClick={retry}>Try again</Button>}
           <SearchLink>Back to search</SearchLink>
         </div>
-      </div> : record.status === 'loading' ? <p role="status">Loading patient profile…</p>
+      </div> : record.status === 'loading' ? <p className="resource-loading" role="status">Loading patient profile…</p>
         : record.status === 'ready' && <ProfileForm {...props} initial={record.patient} />}
     </Card>
   </section>
@@ -76,13 +78,15 @@ function ProfileForm({ initial, service, onDirtyChange, onSaved }: ProfileProps 
   const [patient, setPatient] = useState(initial)
   const [draft, setDraft] = useState(() => draftFromPatient(initial))
   const [includeRelative, setIncludeRelative] = useState(Boolean(initial.relativeInformation))
-  const [errors, setErrors] = useState<PatientDetailsErrors>({})
   const [feedback, setFeedback] = useState<Feedback | null>(null)
   const [saving, setSaving] = useState(false)
   const [saver] = useState(() => createProfileSaver(service))
   const form = useRef<HTMLFormElement>(null)
   const notice = useRef<HTMLDivElement>(null)
   const focusAfterRender = useRef<'field' | 'notice' | null>(null)
+  const validation = validateProfile(draft, includeRelative)
+  const fieldsFeedback = useFieldFeedback<PatientDetailsField>('errors' in validation ? validation.errors : {})
+  const { errors } = fieldsFeedback
   const changed = isProfileDirty(patient, draft, includeRelative)
   const advanced = draft.conditionLevel === 'ADVANCED'
   const hasRelative = Boolean(patient.relativeInformation)
@@ -102,7 +106,7 @@ function ProfileForm({ initial, service, onDirtyChange, onSaved }: ProfileProps 
   function update<Field extends PatientDetailsField>(field: Field, value: PatientDetailsDraft[Field]) {
     if (field === 'conditionLevel' && value === 'ADVANCED') setIncludeRelative(true)
     setDraft(current => ({ ...current, [field]: value }))
-    setErrors(current => ({ ...current, [field]: undefined }))
+    fieldsFeedback.clearField(field)
     setFeedback(null)
   }
 
@@ -111,43 +115,42 @@ function ProfileForm({ initial, service, onDirtyChange, onSaved }: ProfileProps 
     event.preventDefault()
     if (!service.canUpdate || !changed || saver.pending()) return
     setFeedback(null)
-    const result = validateProfile(draft, includeRelative)
-    if ('errors' in result) {
+    fieldsFeedback.submit()
+    if ('errors' in validation) {
       focusAfterRender.current = 'field'
-      setErrors(result.errors)
       return
     }
 
-    setErrors({})
     setSaving(true)
-    const saved = await saver.save(patient, result.payload, getAccessToken())
+    const saved = await saver.save(patient, validation.payload, getAccessToken())
     if (!saved) return
     setSaving(false)
     focusAfterRender.current = 'notice'
     if ('error' in saved) {
       // 400 alan hataları görünürse, global hata yerine ilk hatalı kontrole odaklanırız.
       if (saved.fieldErrors) {
-        setErrors(saved.fieldErrors)
+        fieldsFeedback.setServer(saved.fieldErrors)
         focusAfterRender.current = 'field'
       }
       setFeedback({ tone: 'error', message: saved.error })
       return
     }
+    fieldsFeedback.reset()
     setPatient(saved.patient)
     setDraft(draftFromPatient(saved.patient))
     setIncludeRelative(Boolean(saved.patient.relativeInformation))
     setFeedback({ tone: 'info', message: 'Patient profile saved.' })
-    onSaved()
+    onSaved(saved.patient)
   }
 
-  const fields = { prefix: 'profile', draft, errors, disabled, onChange: update }
+  const fields = { prefix: 'profile', draft, errors, disabled, onChange: update, onBlur: fieldsFeedback.touch }
   return <>
     {feedback && <div ref={notice} tabIndex={-1} className="registration-feedback">
       <Alert tone={feedback.tone}>{feedback.message}</Alert>
     </div>}
     <form ref={form} className="registration-form" autoComplete="off" noValidate onSubmit={submit} aria-busy={saving}>
       <PatientDetailFields {...fields} identity={<dl className="profile-identity">
-        <dt>Synthetic national ID (read only)</dt>
+        <dt>T.C. Kimlik No (read only)</dt>
         <dd>{patient.nationalId}</dd>
       </dl>} />
       {/* Mevcut yakın yalnızca açıkça kaldırma seçilirse güncellemeden çıkarılır. */}
@@ -162,7 +165,7 @@ function ProfileForm({ initial, service, onDirtyChange, onSaved }: ProfileProps 
       {!advanced && hasRelative && !includeRelative && <p className="muted">Saving will remove this relative contact.</p>}
       {(advanced || includeRelative) && <PatientRelativeFields {...fields} advanced={advanced} />}
       <div className="registration-actions profile-buttons">
-        <Button type="submit" disabled={disabled || !changed}>{saving ? 'Saving…' : 'Save changes'}</Button>
+        <Button type="submit" disabled={disabled || !changed} loading={saving}>{saving ? 'Saving…' : 'Save changes'}</Button>
         <SearchLink>{feedback?.tone === 'info' || !service.canUpdate ? 'Back to search' : 'Cancel'}</SearchLink>
         <span className="sr-only" role="status">{saving ? 'Saving patient profile.' : ''}</span>
       </div>

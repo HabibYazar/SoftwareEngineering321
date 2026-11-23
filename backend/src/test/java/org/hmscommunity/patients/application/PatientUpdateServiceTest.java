@@ -54,7 +54,7 @@ class PatientUpdateServiceTest {
 
     @Test
     void allFieldsExceptNationalIdCanBeUpdated() {
-        PatientDetails changed = new PatientDetails("Yeni", "Soyad", LocalDate.of(1991, 6, 18), "Other",
+        PatientDetails changed = new PatientDetails("Yeni", "Soyad", LocalDate.of(1991, 6, 18), "Female",
             "0555 000 00 55", "Yeni Sentetik Adres No:5", ConditionLevel.MODERATE, SyntheticPatients.relative());
 
         Patient updated = service.update(mild.id(), null, changed, RECEPTIONIST);

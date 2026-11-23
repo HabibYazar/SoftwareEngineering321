@@ -1,8 +1,8 @@
 FROM node:22-alpine AS build
 WORKDIR /web
-COPY package.json .
-# Sprint 1 scaffold: npm lockfile must be generated and committed before release.
-RUN npm install --no-audit --no-fund
+# Kilit dosyasıyla tekrarlanabilir kurulum: CI ve imaj aynı paket sürümlerini kullanır.
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build
 FROM nginx:1.29-alpine

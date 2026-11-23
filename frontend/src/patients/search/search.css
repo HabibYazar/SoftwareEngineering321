@@ -1,32 +1,36 @@
-/* Ortak kart, odak ve renk stilleri korunur; bu dosya yalnızca aramanın yerleşimini düzenler. */
-.patient-search { max-width: 54rem; }
-.patient-search-form { display: grid; gap: var(--space-4); }
+/* Aramada alan ve eylemler aynı satırda hizalanır; küçük ekranda doğal sırayla alt alta gelir. */
+.patient-search { max-width: 72rem; }
+.patient-search-controls { border-top: 3px solid var(--accent); }
+.patient-search-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-4); }
 .patient-search-form fieldset {
-  margin: 0;
-  padding: 0;
-  border: 0;
-  min-inline-size: 0;
+  grid-column: 1 / -1; margin: 0; padding: 0; border: 0; min-inline-size: 0;
 }
-.patient-search-form legend { padding: 0; font-weight: 650; }
-.patient-search-modes, .patient-search-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2) var(--space-4);
-}
+.patient-search-form legend { padding: 0; margin-bottom: var(--space-2); font-weight: 650; }
+.patient-search-modes, .patient-search-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.patient-search-actions { align-self: start; margin-top: 2rem; }
+.patient-search-actions .button { min-height: 48px; }
+.patient-search-actions button[type="submit"] { min-inline-size: 8rem; padding-inline: var(--space-6); }
 .patient-search-modes label {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-block-size: 44px;
+  display: inline-flex; align-items: center; gap: var(--space-2); min-block-size: 44px;
+  padding: var(--space-2) var(--space-3); background: var(--inset);
+  border: 1px solid var(--control-border); border-radius: var(--control-radius); cursor: pointer;
 }
-.patient-search-modes input {
-  accent-color: var(--accent);
-  inline-size: 1.125rem;
-  block-size: 1.125rem;
-}
-.patient-search-results { margin-top: var(--space-8); }
-.patient-search-results > p:empty { margin: 0; }
-.patient-result-list { padding: 0; margin: 0; list-style: none; }
-.patient-result-card { height: 100%; }
-.patient-result-card p { margin: var(--space-2) 0 0; }
+.patient-search-modes label:has(:checked) { background: var(--accent-soft); border-color: var(--accent); }
+.patient-search-modes input { flex: none; accent-color: var(--accent); inline-size: 1.125rem; block-size: 1.125rem; }
+
+/* Arama sonuçları, oturum kayıtları ve ek liste ayrı yüzeylerde kalır. */
+.patient-search-results { margin-top: var(--space-5); padding: var(--card-padding); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+.patient-search-results > [role="status"]:not(:empty) { border-inline-start: 3px solid var(--accent-secondary); padding: var(--space-2) var(--space-3); background: var(--inset); }
+.patient-search-results > p:last-child { margin-bottom: 0; }
+.patient-list--session { border-inline-start: 3px solid var(--accent); }
+.patient-list--additional { background: var(--inset); }
+.grid.patient-result-list { padding: 0; margin: 0; list-style: none; grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr)); }
+.patient-result-card { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); height: 100%; box-shadow: none; padding: var(--space-4); }
+.patient-result-heading { display: flex; gap: var(--space-3); align-items: center; }
+.patient-result-card .button { margin-top: auto; padding-inline: var(--space-2); }
+.patient-result-card p { margin: 0; overflow-wrap: anywhere; }
 .patient-result-card span { font-variant-numeric: tabular-nums; }
+@media (max-width: 37rem) {
+  .patient-search-form { grid-template-columns: minmax(0, 1fr); }
+  .patient-search-actions { margin-top: 0; }
+}

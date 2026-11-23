@@ -9,6 +9,7 @@ import { createHttpPatientProfileService } from '../src/patients/profile/httpPro
 import { createProfileSaver } from '../src/patients/profile/saveRunner.ts'
 import { draftFromPatient, validateProfile } from '../src/patients/profile/model.ts'
 import { emptyRegistration, validateRegistration } from '../src/patients/validation.ts'
+import { syntheticTurkishNationalId } from './fixtures/turkishNationalId.mjs'
 
 const isoFuture = () => new Date(Date.now() + 60_000).toISOString()
 const credentials = { username: 'synthetic.reception', password: 'synthetic-password-only' }
@@ -16,13 +17,13 @@ const token = 'synthetic-opaque-token'
 const auth = () => ({ accessToken: token, tokenType: 'Bearer', role: 'Receptionist', expiresAt: isoFuture() })
 const id = '00000000-0000-4000-8000-000000000042'
 const draft = {
-  ...emptyRegistration, firstName: 'Synthetic', lastName: 'Contract', nationalId: '00000000042',
-  dateOfBirth: '2000-01-01', gender: 'Not disclosed', phone: '0000000000',
+  ...emptyRegistration, firstName: 'Synthetic', lastName: 'Contract', nationalId: syntheticTurkishNationalId('100000042'),
+  dateOfBirth: '2000-01-01', gender: 'Not disclosed', phone: '05000000000',
   address: 'Synthetic address', conditionLevel: 'MILD',
 }
 const { payload } = validateRegistration(draft, false)
 const patient = { ...payload, id }
-const relative = { fullName: 'Synthetic Relative', relationship: 'Sibling', phone: '+90 (532) 000-00-00' }
+const relative = { fullName: 'Synthetic Relative', relationship: 'Sibling', phone: '+905320000000' }
 
 // Resmî Problem biçimiyle yanıt üretir. Bu kayıtlar backend veya kalıcı depoya gitmez.
 function problem(status, code, errors) {
@@ -72,7 +73,7 @@ test('a controlled HTTP flow uses official auth, registration, search, retrieval
   const selected = await profile.load(results[0].id, token)
   const { payload: edit } = validateProfile({
     ...draftFromPatient(selected), lastName: 'Updated', conditionLevel: 'ADVANCED',
-    relativeFullName: relative.fullName, relativeRelationship: relative.relationship, relativePhone: relative.phone,
+    relativeFullName: relative.fullName, relativeRelationship: relative.relationship, relativePhone: '0532 000 00 00',
   }, true)
   const saved = await createProfileSaver(profile).save(selected, edit, token)
   assert.equal(saved.patient.nationalId, patient.nationalId)
@@ -80,7 +81,7 @@ test('a controlled HTTP flow uses official auth, registration, search, retrieval
   await authentication.logout(token)
   assert.deepEqual(calls, [
     ['POST', '/api/v1/auth/login'], ['POST', '/api/v1/patients'],
-    ['GET', '/api/v1/patients?nationalId=00000000042'], ['GET', '/api/v1/patients/' + id],
+    ['GET', '/api/v1/patients?nationalId=' + patient.nationalId], ['GET', '/api/v1/patients/' + id],
     ['PUT', '/api/v1/patients/' + id], ['GET', '/api/v1/patients?name=Updated'],
     ['POST', '/api/v1/auth/logout'],
   ])
@@ -144,7 +145,7 @@ test('future birth dates and invalid public-contract phone formats are rejected 
   const badProfile = validateProfile({ ...draftFromPatient(patient), ...fields }, false)
   assert.deepEqual(badProfile.errors, badRegistration.errors)
   assert.deepEqual(Object.keys(badProfile.errors).sort(), ['dateOfBirth', 'phone'])
-  assert.equal(validateRegistration({ ...draft, phone: relative.phone }, false).payload.phone, relative.phone)
+  assert.equal(validateRegistration({ ...draft, phone: '0532 000 00 00' }, false).payload.phone, relative.phone)
 })
 
 test('a role without verified patient permissions cannot reach the official patient methods even with a valid session', async () => {

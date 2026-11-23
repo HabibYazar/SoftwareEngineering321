@@ -1,7 +1,10 @@
 import type { MouseEvent, ReactNode } from 'react'
+import { homePath, roleLabels } from '../auth/routing'
 import type { Role } from '../auth/types'
+import { ThemeToggle } from '../theme/ThemeToggle'
 import { NavigationControls } from './NavigationControls'
 import { Sidebar } from './Sidebar'
+import { Icon } from './ui'
 
 interface AppLayoutProps {
   role: Role | null
@@ -13,9 +16,7 @@ interface AppLayoutProps {
   children: ReactNode
 }
 
-// Giriş, doktor listesi ve rol sayfaları aynı yan menüyü, sayfa eylemlerini ve içerik alanını paylaşır.
 export function AppLayout({ children, navigation, onNavigate, ...sidebar }: AppLayoutProps) {
-  // Normal rota bağlantıları kontrollü geçmişe alınır. Yeni sekme ve değiştirilmiş tıklamalar tarayıcıya kalır.
   function handleLinkClick(event: MouseEvent<HTMLDivElement>) {
     if (event.defaultPrevented || event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return
     if (!(event.target instanceof Element)) return
@@ -26,16 +27,29 @@ export function AppLayout({ children, navigation, onNavigate, ...sidebar }: AppL
     onNavigate(link.hash.slice(1))
   }
 
-  return <div className="shell" onClick={handleLinkClick}>
+  const { role, route } = sidebar
+  const workspace = role && homePath(role)
+  const showHistory = role || navigation.canGoBack || navigation.canGoForward || navigation.onRefresh
+
+  return <div className={`shell${role ? '' : ' shell--guest'}`} onClick={handleLinkClick}>
     <a className="skip-link" href="#main-content" onClick={event => {
-      // Hash yönlendirmesini değiştirmeden klavye odağını içeriğe taşır.
       event.preventDefault()
       document.getElementById('main-content')?.focus()
     }}>Skip to main content</a>
     <Sidebar {...sidebar} />
+    <header className="workspace-bar">
+      {role && <div className="workspace-context">
+        {route === workspace ? <><Icon name="home" /> <strong>Home</strong></> : <a href={'#' + workspace}><Icon name="home" /> Home</a>}
+        {route !== workspace && <span aria-hidden="true">/</span>}
+        {route !== workspace && <strong>{roleLabels[role]} workspace</strong>}
+      </div>}
+      <div className="workspace-tools">
+        {showHistory && <NavigationControls {...navigation} />}
+        <ThemeToggle />
+      </div>
+    </header>
     <main className="main-content" id="main-content" tabIndex={-1}>
-      <NavigationControls {...navigation} />
-      {children}
+      <div className="workspace-content">{children}</div>
     </main>
   </div>
 }

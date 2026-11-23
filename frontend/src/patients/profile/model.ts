@@ -1,3 +1,4 @@
+import { displayStoredTurkishMobile } from '../formOptions.ts'
 import type { NewPatient, Patient, RelativeInformation } from '../types.ts'
 import { validatePatientDetails, type PatientDetailsDraft, type PatientDetailsErrors } from '../validation.ts'
 
@@ -42,10 +43,10 @@ export class PatientProfileError extends Error {
 export function draftFromPatient(patient: Patient): PatientDetailsDraft {
   const { firstName, lastName, dateOfBirth, gender, phone, address, conditionLevel, relativeInformation } = patient
   return {
-    firstName, lastName, dateOfBirth, gender, phone, address, conditionLevel,
+    firstName, lastName, dateOfBirth, gender, phone: displayStoredTurkishMobile(phone), address, conditionLevel,
     relativeFullName: relativeInformation?.fullName ?? '',
     relativeRelationship: relativeInformation?.relationship ?? '',
-    relativePhone: relativeInformation?.phone ?? '',
+    relativePhone: displayStoredTurkishMobile(relativeInformation?.phone ?? ''),
   }
 }
 

@@ -1,0 +1,7 @@
+# Yerel (ör. Windows) bağımlılıkları ve derleme çıktıları imaja kopyalanmaz; imaj npm ci ile kendi kurulumunu yapar.
+node_modules
+dist
+coverage
+.env
+.env.*
+!.env.example

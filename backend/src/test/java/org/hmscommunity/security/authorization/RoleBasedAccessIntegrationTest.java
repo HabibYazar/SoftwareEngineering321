@@ -51,7 +51,9 @@ class RoleBasedAccessIntegrationTest {
         SEARCH_PATIENTS(Permission.PATIENT_VIEW, () -> get("/api/v1/patients").param("name", "test")),
         VIEW_PATIENT(Permission.PATIENT_VIEW, () -> get(SOME_PATIENT)),
         UPDATE_PATIENT(Permission.PATIENT_UPDATE,
-            () -> put(SOME_PATIENT).contentType(MediaType.APPLICATION_JSON).content("{}"));
+            () -> put(SOME_PATIENT).contentType(MediaType.APPLICATION_JSON).content("{}")),
+        LIST_DOCTORS(Permission.DOCTOR_DIRECTORY_VIEW, () -> get("/api/v1/staff").param("department", "Kardiyoloji")),
+        LIST_DEPARTMENTS(Permission.DOCTOR_DIRECTORY_VIEW, () -> get("/api/v1/departments"));
 
         public final Permission permission;
         public final Supplier<MockHttpServletRequestBuilder> request;
