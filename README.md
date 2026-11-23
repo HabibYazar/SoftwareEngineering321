@@ -63,6 +63,12 @@ flowchart LR
 
 ## Local demo (non-production)
 
+**Administrator setup:** A fresh Docker database does not contain
+`admin.demo` automatically. The six synthetic staff accounts are seeded,
+but the first administrator requires explicit bootstrap credentials.
+Follow the [Sprint 2 Docker demo and QA guide](docs/sprint-2/demo-and-qa.md)
+before first startup. Existing administrators are not reset.
+
 Requires Docker Compose:
 
 ```bash
