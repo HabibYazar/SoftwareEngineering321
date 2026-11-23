@@ -1,9 +1,14 @@
 flowchart LR
-    Reception[Reception Staff] -->|register patient & appointments| HMS[HMS Community]
-    Physician[Physician] -->|document encounter & order tests| HMS
-    Lab[Lab Staff] -->|enter synthetic test results| HMS
-    Admin[Hospital Administrator] -->|manage staff & roles| HMS
-    HMS -. future approved adapters .-> Government[National health and insurance services]
-    HMS -. future adapter .-> Devices[Lab / imaging devices]
-    classDef deferred fill:#f5f5f5,stroke:#999,stroke-dasharray:5 5
-    class Government,Devices deferred
+    Receptionist["Receptionist (Person)"]
+    Administrator["Administrator (Person)"]
+    Staff["Physicians and other staff (Persons)"]
+    HMS["HMS Community (Software System)"]
+    External["National health and insurance services (External Systems)"]
+    Devices["Laboratory and imaging devices (External Systems)"]
+
+    Receptionist -->|"Login, register/search/update patients, browse doctors"| HMS
+    Administrator -->|"Login and permitted administrative access"| HMS
+    Staff -->|"Authenticate and access permitted functions"| HMS
+
+    HMS -.->|"Future approved adapter; not implemented"| External
+    HMS -.->|"Future device adapter; not implemented"| Devices

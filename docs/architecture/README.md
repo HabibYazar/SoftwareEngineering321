@@ -1,27 +1,47 @@
-# Architecture index
+# HMS Community — Software Architecture Documentation
 
-## Architecture decision
+**Baseline:** Sprint 2, 23 November 2026
+**Owner:** Habib Yazar — Lead Software Architect and Technical Lead
+**Architectural style:** Modular monolith
 
-**Style:** modular monolith. One Java deployment, module boundaries within one codebase, one PostgreSQL instance (data isolated by schema conventions to be designed). Microservices and message broker are intentionally deferred; they add operational cost without helping the first sprint.
+## Sprint 2 submission
 
-## C4 and domain diagrams (Mermaid)
+[View the rendered C4, UML and user-flow diagrams](../sprint-2/architecture.md).
 
-- [C4 L1 context](c4-context.mmd)
-- [C4 L2 containers](c4-container.mmd)
-- [C4 L3 module responsibilities](c4-components.mmd)
-- [Domain relationships / ER](domain-model.mmd)
-- [MVP sequence](mvp-sequence.mmd)
+### C4 models
 
-Mermaid diagrams can be previewed in GitHub Markdown code fences or in Mermaid Live Editor. Treat all relationships as design hypotheses until requirements are validated.
+- [C4 Level 1 — System Context](c4-context.mmd)
+- [C4 Level 2 — Container Diagram](c4-container.mmd)
+- [C4 Level 3 — Implemented Backend Components](c4-components.mmd)
 
-## Module boundary rules
+### UML diagrams
 
-- No feature module owns security for other modules; `security` exposes role/permission capabilities and audit facade.
-- Own entities and repositories inside the owning domain module. Cross-module reads through application services and stable interfaces, not another module's tables or repository types.
-- Every mutating operation must have authorized actor, transaction boundaries, validation, audit intent, failure semantics, and tests.
-- Use API contracts and ID references rather than exposing ORM entities across module boundaries.
-- Healthcare-specific integrations (MEDULA, e-Nabız, MHRS, e-prescription, LIS devices, PACS) are **not implemented or authorized** in this scaffold. Adapter interfaces may be designed after confirming actual provider requirements.
+- [Implementation Class Diagram](uml-implementation-class.mmd)
+- [Authentication Sequence Diagram](uml-auth-sequence.mmd)
+- [Patient Management Sequence Diagram](uml-patient-sequence.mmd)
+- [Doctor Directory Sequence Diagram](uml-directory-sequence.mmd)
+- [Sprint 2 User Flows](sprint2-user-flows.mmd)
 
-## Deferred production requirements
+### Data models and supporting documents
 
-Risk analysis, operational redundancy and offline workflows, encrypted internal transport, IAM integration, immutable audit event storage, backup and disaster recovery, KVKK and clinical compliance, detailed device/medication safety checks, real hospital stakeholder validation, and load/performance testing. LAN hosting alone does **not** make an application secure.
+- [Physical PostgreSQL ER Diagram](database-er.mmd)
+- [Conceptual Future Domain Model](domain-model.mmd)
+- [Sprint 3 Planned MVP Sequence](mvp-sequence.mmd)
+- [Docker Deployment Architecture](containers-architecture.md)
+- [US-09 Backend Architecture](US-09-backend-architecture.md)
+
+## Architecture rationale
+
+The backend is a single Java 21 / Spring Boot deployment with internal functional modules, using Spring Security, JdbcClient and Flyway-managed PostgreSQL. The frontend is React/TypeScript delivered through Nginx. Modules share one deployment and database but keep service/repository responsibilities separated.
+
+A modular monolith limits distributed-system complexity for the course timeline and supports rapid integration. Microservices, message brokers and external clinical adapters are deferred.
+
+See [ADR-001](../adr/0001-modular-monolith.md), [ADR-002](../adr/0002-on-prem-network.md) and [ADR-004](../adr/0004-api-first.md).
+
+## Current implementation boundary
+
+Sprint 2 implements authentication, role-based authorization, audit infrastructure, patient registration/search/update and doctor/department lookup.
+
+Appointments, encounters, clinical records, laboratory functions and inpatient workflows are planned or deferred. Their conceptual domain relationships must not be confused with already deployed backend functionality.
+
+The UI/UX user-flow diagram here is supplementary engineering documentation; the separately required **Figma prototype and its shareable link** must still be provided for Teams submission.

@@ -1,0 +1,97 @@
+classDiagram
+    class AuthController {
+        +login(LoginRequest) LoginResponse
+        +logout(StaffAuthenticationToken) void
+    }
+
+    class AuthenticationService {
+        +login(String username, String password) IssuedAccessToken
+        +logout(StaffAuthenticationToken) void
+    }
+
+    class PatientController {
+        +register(PatientRequest) ResponseEntity
+        +search(String name, String nationalId) List~Patient~
+        +get(UUID patientId) Patient
+        +update(UUID patientId, PatientRequest) Patient
+    }
+
+    class PatientService {
+        +register(String nationalId, PatientDetails details, AuthenticatedStaff actor) Patient
+        +search(String name, String nationalId, AuthenticatedStaff actor) List~Patient~
+        +get(UUID patientId, AuthenticatedStaff actor) Patient
+        +update(UUID patientId, String nationalId, PatientDetails details, AuthenticatedStaff actor) Patient
+    }
+
+    class PatientValidator {
+        +validateNationalId(String nationalId) List~FieldViolation~
+        +validateDetails(PatientDetails details) List~FieldViolation~
+    }
+
+    class PatientRepository {
+        <<interface>>
+        +insert(Patient patient, AuthenticatedStaff actor) Patient
+        +findById(UUID id) Optional~Patient~
+        +findByNationalId(String id) Optional~Patient~
+        +searchByName(String name) List~Patient~
+        +update(Patient patient, AuthenticatedStaff actor) Patient
+    }
+
+    class JdbcPatientRepository {
+        -JdbcClient jdbc
+        +insert(Patient patient, AuthenticatedStaff actor) Patient
+        +update(Patient patient, AuthenticatedStaff actor) Patient
+    }
+
+    class StaffController {
+        +listClinicians(String department) List~Clinician~
+    }
+
+    class StaffService {
+        +getClinicians(String department) List~Clinician~
+    }
+
+    class StaffRepository {
+        -JdbcClient jdbcClient
+        +findClinicians(String department) List~Clinician~
+    }
+
+    class DepartmentsController {
+        +listDepartments() List~Department~
+    }
+
+    class DepartmentsService {
+        +getDepartments() List~Department~
+    }
+
+    class DepartmentsRepository {
+        -JdbcClient jdbcClient
+        +findDepartments() List~Department~
+    }
+
+    class Clinician {
+        <<record>>
+        +UUID id
+        +String displayName
+        +String department
+    }
+
+    class Department {
+        <<record>>
+        +UUID id
+        +String name
+    }
+
+    AuthController --> AuthenticationService
+    PatientController --> PatientService
+    PatientService --> PatientValidator
+    PatientService --> PatientRepository
+    JdbcPatientRepository ..|> PatientRepository
+
+    StaffController --> StaffService
+    StaffService --> StaffRepository
+    StaffRepository ..> Clinician
+
+    DepartmentsController --> DepartmentsService
+    DepartmentsService --> DepartmentsRepository
+    DepartmentsRepository ..> Department

@@ -1,0 +1,38 @@
+flowchart TD
+    Start["Staff opens HMS Community"] --> Login["Login form"]
+    Login --> Credentials{"Valid credentials?"}
+
+    Credentials -->|"No"| LoginError["Show error; no token"]
+    LoginError --> Login
+
+    Credentials -->|"Yes"| Workspace["Role-aware workspace"]
+    Workspace --> Permission{"Permission for selected feature?"}
+    Permission -->|"No"| Denied["Access denied / hidden feature"]
+    Permission -->|"Yes"| Feature{"Select feature"}
+
+    Feature -->|"Register patient"| Registration["Patient registration form"]
+    Registration --> CheckForm{"Valid fields?"}
+    CheckForm -->|"No"| FieldErrors["Display field errors"]
+    FieldErrors --> Registration
+    CheckForm -->|"Yes"| SavePatient["POST /api/v1/patients"]
+    SavePatient --> RegistrationResult["Success 201 or error feedback"]
+
+    Feature -->|"Search patients"| Search["Search by exact national ID or partial name"]
+    Search --> Results{"Matching patient?"}
+    Results -->|"No"| Empty["No patient found"]
+    Results -->|"Yes"| Profile["Open patient profile"]
+    Profile --> Edit["Edit permitted fields"]
+    Edit --> Update["PUT /api/v1/patients/{patientId}"]
+    Update --> UpdateResult["Show validation or save result"]
+
+    Feature -->|"Doctor directory"| Departments["Load active departments"]
+    Departments --> Choose["Choose department"]
+    Choose --> Doctors["GET /api/v1/staff?department=..."]
+    Doctors --> Display["Show matching doctors or empty state"]
+
+    Workspace --> Logout["Logout"]
+    RegistrationResult --> Workspace
+    Empty --> Workspace
+    UpdateResult --> Workspace
+    Display --> Workspace
+    Logout --> Login
