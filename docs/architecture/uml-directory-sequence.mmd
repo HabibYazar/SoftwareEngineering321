@@ -1,0 +1,44 @@
+sequenceDiagram
+    autonumber
+    actor Receptionist
+    participant UI as React DoctorDirectory
+    participant Security as Spring Security
+    participant Departments as DepartmentsController
+    participant DeptService as DepartmentsService
+    participant DeptRepo as DepartmentsRepository
+    participant Staff as StaffController
+    participant StaffService as StaffService
+    participant StaffRepo as StaffRepository
+    participant DB as PostgreSQL
+
+    Receptionist->>UI: Open doctor directory
+    UI->>Security: GET /api/v1/departments
+    Security->>Security: Verify DOCTOR_DIRECTORY_VIEW
+
+    alt Authorized
+        Security->>Departments: Route request
+        Departments->>DeptService: getDepartments()
+        DeptService->>DeptRepo: findDepartments()
+        DeptRepo->>DB: SELECT id, name FROM departments WHERE is_active
+        DB-->>DeptRepo: Active departments
+        Departments-->>UI: HTTP 200 Department[]
+    else Unauthorized
+        Security-->>UI: HTTP 401 or 403
+    end
+
+    Receptionist->>UI: Select Kardiyoloji
+    UI->>Security: GET /api/v1/staff?department=Kardiyoloji
+    Security->>Staff: Authorized request
+    Staff->>StaffService: getClinicians("Kardiyoloji")
+    StaffService->>StaffRepo: findClinicians("Kardiyoloji")
+    StaffRepo->>DB: SELECT from doctors view WHERE department = ?
+    DB-->>StaffRepo: Clinician records
+    StaffRepo-->>StaffService: List of clinicians
+    StaffService-->>Staff: List of clinicians
+    Staff-->>UI: HTTP 200 Clinician[]
+
+    alt Results found
+        UI-->>Receptionist: Display matching doctors
+    else Empty results
+        UI-->>Receptionist: No doctors found
+    end

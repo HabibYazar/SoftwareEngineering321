@@ -1,79 +1,43 @@
-## Containerization & Runtime Deployment Architecture
-### Windows Setup & Usage
-Project members need to download and install [Docker Desktop for Windows](https://www.docker.com/products/docker-desktop/) to run the full application stack with a single command. Using the WSL 2 backend is strongly recommended for faster file I/O and native Linux container compatibility—see the [Microsoft WSL Installation Guide](https://learn.microsoft.com/en-us/windows/wsl/install) to set it up before launching Docker Desktop.
+# Containerization and Runtime Deployment Architecture
 
-After installing, the project can be run with a single command by launching cmd, cd into the project directory, and running `docker compose up --build`
-frontend will bind to port 80 (browsers can connect to http://localhost:80) and backend will bind to port 8080 (ensure localhost:8080/api/v1/health returns success). db will not bind to any port, it will seed data from db/init/ . 
+## 1. Architecture decision
 
+The HMS Community educational prototype uses three Docker Compose services behind an isolated internal network:
 
-### Architectural Rationale
-environment parity across all developer workstations and elimination of host-level dependency conflicts (`Java`, `Maven`, `Node.js`, `PostgreSQL`).
-All decisions align with industry standard practices.
-The system is decomposed into three isolated containers orchestrated to run with a single command via Docker Compose (`compose.yaml`):
+- `frontend`: Nginx 1.29 serving a compiled React/TypeScript application and proxying `/api/*`.
+- `backend`: Java 21 / Spring Boot modular monolith, built with Maven.
+- `db`: PostgreSQL 17 with a persistent named Docker volume.
 
-1. **Process Isolation & Lifecycle Decoupling:** Separating the presentation tier (`frontend`), application tier (`backend`), and persistence tier (`db`) allows independent rebuilds and restarts without data loss.
-2. **Multi-Stage Builds:** Both `backend` and `frontend` compile source code inside heavy SDK builder images (`maven:3.9-eclipse-temurin-21` and `node:22-alpine`) and copy only compiled artifacts (`.jar` and static `/dist` assets) into minimal runtime images (`eclipse-temurin:21-jre` and `nginx:1.29-alpine`).
-3. **Least-Privilege Execution:** The Spring Boot container runs under an unprivileged system user (`appuser`, UID `10001`) rather than `root`.
-4. **Network Segmentation:** PostgreSQL is isolated on the private `internal` Docker bridge network with no host port exposure; only `frontend` (`:80`) and `backend` (`:8080`) bind to host ports.
+The backend runs as non-root user `appuser` (UID 10001). The frontend currently uses the upstream Nginx runtime image without an explicit non-root user; this is a pending hardening item, not a verified compliance claim.
 
-### Container & Deployment Diagram
-```mermaid
-flowchart TB
-    %% C4 Styling
-    classDef person fill:#08427B,stroke:#052E56,color:#FFFFFF,rx:12,ry:12
-    classDef container fill:#438DD5,stroke:#2E6295,color:#FFFFFF,rx:6,ry:6
-    classDef storage fill:#999999,stroke:#6B6B6B,color:#FFFFFF,rx:6,ry:6
+## 2. Network boundaries
 
-    user(["<b>End User</b><br/><i>[Person]</i><br/>Clinician, staff, or developer"]):::person
+The frontend publishes the configurable host port `HMS_HTTP_PORT` (default 80) on `127.0.0.1`. The backend publishes `HMS_BACKEND_PORT` (default 8080), also on `127.0.0.1`.
 
-    subgraph host ["Docker Host Machine — Bridge Network (internal)"]
-        direction TB
+PostgreSQL exposes port 5432 only within the Docker internal bridge network. It does not publish a host port.
 
-        frontend["<b>Frontend Web Container</b><br/><i>[Container: Nginx 1.29 / Node 22]</i><br/>Serves compiled SPA static assets (:80)<br/>and reverse-proxies /api/* requests"]:::container
+This is a development/demo layout, not a clinical production deployment. Real deployment requires transport encryption, identity/governance review, operational controls and formal security assessment.
 
-        backend["<b>Backend API Container</b><br/><i>[Container: Spring Boot / Temurin 21 JRE]</i><br/>Executes REST API & JPA domain logic<br/>as non-root <b>appuser</b> (:8080)"]:::container
+## 3. Database installation and seeds
 
-        db[("<b>Database Container</b><br/><i>[Container: PostgreSQL 17 Alpine]</i><br/>Stores relational clinical data (:5432)<br/>with pg_isready healthcheck")]:::container
+The backend applies versioned Flyway migrations V1–V5 on startup. The local Compose environment enables `classpath:db/migration,classpath:db/seed`, adding repeatable synthetic demo migrations.
 
-        subgraph mounts ["Docker Volumes & Host Mounts"]
-            direction LR
-            vol_data["<b>hms_postgres</b><br/><i>[Docker Named Volume]</i><br/>Persists /var/lib/postgresql/data"]:::storage
-            vol_seed["<b>./db/init</b><br/><i>[Read-Only Bind Mount]</i><br/>01_init_and_seed.sql & CSV fixtures"]:::storage
-        end
-    end
+The schema is not created by `db/init` bind mounts. No `docker-entrypoint-initdb.d` initialization scripts or seed CSVs are mounted by the current `compose.yaml`.
 
-    user -->|"HTTP :80"| frontend
-    frontend -->|"Proxies /api/* (HTTP :8080)"| backend
-    backend -->|"JDBC (TCP :5432)"| db
-    db <-->|"Reads / Writes state"| vol_data
-    vol_seed -->|"Seeds schema & CSVs on 1st boot"| db
-```
+## 4. Runtime sequence
 
-# Compose Usage and Health Check Sequence Diagram: 
+1. `docker compose up --build -d` builds the backend and frontend images and starts PostgreSQL.
+2. PostgreSQL becomes healthy using `pg_isready`.
+3. Backend connects via JDBC, applies migrations and starts its REST API.
+4. Backend health check waits for `GET /api/v1/health`.
+5. Frontend starts after the backend is healthy and serves the compiled application.
 
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Dev as Developer
-    participant Compose as Docker Compose
-    participant DB as db (postgres:17-alpine)
-    participant BE as backend (Spring Boot)
-    participant FE as frontend (nginx:1.29-alpine)
+`docker compose down` preserves the `hms_postgres` volume. Do not use `down -v` unless intentional data deletion is required.
 
-    Dev->>Compose: docker compose up --build
-    Compose->>DB: Start container & mount ./db/init
-    alt Volume hms_postgres is empty
-        DB->>DB: Execute /docker-entrypoint-initdb.d/01_init_and_seed.sql
-        DB->>DB: COPY departments.csv (8 rows) & clinicians.csv (25 rows)
-    end
-    loop Every 5s (max 15 retries)
-        Compose->>DB: pg_isready -U hms -d hms_community
-    end
-    DB-->>Compose: Status: Healthy
-    Compose->>BE: Start container (depends_on: service_healthy)
-    BE->>DB: Connect via JDBC (jdbc:postgresql://db:5432/hms_community)
-    Compose->>FE: Start container (depends_on: backend)
-    FE-->>Dev: Ready at http://localhost:80
-```
-```
+## 5. Verified evidence
 
+The local isolated Docker smoke test verified healthy PostgreSQL/backend services, frontend HTTP 200, Flyway V1–V5, six role-based demo accounts, administrator login, 10 departments and 40 doctors.
+
+It did not independently verify restart persistence, non-root Nginx execution or the NFR-02 pre-cached 60-second startup target.
+
+See [Sprint 2 verification](../sprint-2/README.md) and [quality measures](../sprint-2/quality-measures.md).

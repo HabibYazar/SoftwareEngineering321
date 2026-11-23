@@ -1,0 +1,43 @@
+sequenceDiagram
+    autonumber
+    actor Staff as Staff Member
+    participant UI as React Frontend
+    participant Auth as AuthController
+    participant Service as AuthenticationService
+    participant Accounts as StaffAccountDirectory
+    participant Tokens as AccessTokenService
+    participant DB as PostgreSQL
+
+    Staff->>UI: Enter username and password
+    UI->>Auth: POST /api/v1/auth/login
+    Auth->>Service: login(username, password)
+    Service->>Accounts: findByUsername(username)
+    Accounts->>DB: Read account and role
+    DB-->>Accounts: Account or no match
+    Accounts-->>Service: Optional account
+
+    alt Valid and active account
+        Service->>Service: Verify BCrypt password
+        Service->>Tokens: issue(account)
+        Tokens->>DB: Record authenticated session
+        DB-->>Tokens: Session created
+        Tokens-->>Service: Access token and staff role
+        Service-->>Auth: IssuedAccessToken
+        Auth-->>UI: HTTP 200 LoginResponse
+        UI-->>Staff: Authorized workspace
+    else Invalid credentials
+        Service->>DB: Record failed login
+        Service-->>Auth: InvalidCredentialsException
+        Auth-->>UI: HTTP 401
+        UI-->>Staff: Login error, no session
+    end
+
+    opt Staff logs out
+        Staff->>UI: Logout
+        UI->>Auth: POST /api/v1/auth/logout with Bearer token
+        Auth->>Service: logout(authentication)
+        Service->>Tokens: revoke(sessionId)
+        Tokens->>DB: Revoke session
+        Auth-->>UI: HTTP 204 No Content
+        UI-->>Staff: Return to login
+    end
