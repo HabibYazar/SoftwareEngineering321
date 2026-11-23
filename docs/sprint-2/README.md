@@ -5,6 +5,12 @@
 **Date:** 23 November 2026
 **Status:** Integrated into `main`, with successful CI and local Docker smoke tests.
 
+## Requirements and quality deliverables
+
+- [Software Requirements Specification](../SRS.md)
+- [Refined Product Backlog](refined-backlog.md)
+- [Non-Functional Requirements and Quality Measures](quality-measures.md)
+- [C4 and UML architecture index](../architecture/README.md)
 ## 1. Delivered functionality
 
 Sprint 2 integration includes:

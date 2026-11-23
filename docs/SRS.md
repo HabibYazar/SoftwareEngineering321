@@ -1,25 +1,64 @@
 # Software Requirements Specification (SRS) & Product Backlog
 
-> **Status: Work in Progress (v0.1)** — This is a living draft, and each team member must fill out the functional requirements, acceptance criteria, and relevant non-functional requirements for their assigned user stories before Sprint 2 freeze. 
+> **Status: Sprint 2 requirements baseline (v1.0, 23 November 2026).** Implementation evidence and Product Owner acceptance are reported separately.
 
 > Any changes to this document must be traceable. Entries must have a clear reason for existing / traceable link to the required functionality.
 
 ---
 
 ## 1. Document Control & Team Ownership
-TBD
+
+| Field | Value |
+|---|---|
+| Project | HMS Community — Hospital Management System |
+| Course | BM321 / SENG321, Team 15 |
+| Baseline | Sprint 2, version 1.0 |
+| Baseline date | 23 November 2026 |
+| Requirements owner | Hüseyin Tutak — Product Owner |
+| Architecture owner | Habib Yazar — Technical Lead |
+| QA owner | Yusuf Arda Şanlı |
+| Repository | https://github.com/HabibYazar/SoftwareEngineering321 |
+| API contract | [OpenAPI 3.1](../api/openapi.yaml) |
+| Refined backlog | [Sprint 2 Refined Backlog](sprint-2/refined-backlog.md) |
+| Quality specifications | [NFR and Quality Measures](sprint-2/quality-measures.md) |
+| Verification | [Sprint 2 Integration Report](sprint-2/README.md) |
+
+### 1.1 Purpose and scope
+
+This SRS establishes the functional and quality requirements for the educational HMS Community prototype. Sprint 2 focuses on staff authentication, authorization, audit infrastructure, patient registration, search and update, and the clinician directory. Appointment scheduling, clinical examinations and laboratory workflows belong to later iterations.
+
+All demonstration data must be synthetic. The application is not approved for clinical deployment.
+
+### 1.2 Status interpretation
+
+- **Implemented:** corresponding code exists in the integrated repository.
+- **Verified:** a specified automated or local test has produced evidence.
+- **Accepted:** the Product Owner has formally accepted the complete story.
+- A merged PR or a passing build does not automatically mean that every acceptance criterion is verified or that the parent Issue should be closed.
+
+The GitHub Issue states in this baseline were checked on 23 November 2026. Issue status and implementation evidence are deliberately tracked separately.
+
 ---
 
 ## 2. Refined Product Backlog (Sprint 2)
 
-| Story ID | Issue | Epic | Title | Priority | Story Points | Status |
-| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **US-09** | `#201` | EP-03: Doctor & Staff Management | List doctors by department | Must | 3 | In Progress |
-| *US-XX* | *#XXX* | *EP-XX: [Teammate Fill]* | *[Teammate Fill]* | *Must/Should* | *X* | *Planned* |
+The Sprint 2 baseline contains seven parent user stories totaling **35 Story Points**: 32 Must-priority points and 3 Should-priority points. Technical sub-issues do not add separate Story Points.
 
----
+| Story | Parent Issue | Epic | Priority | SP | Issue status | Implementation evidence |
+|---|---|---|---|---:|---|---|
+| US-01 Staff Login | [#107](https://github.com/HabibYazar/SoftwareEngineering321/issues/107) | EP-08 | Must | 5 | Open | Login API and Docker authentication smoke test |
+| US-02 Role-Based Access | [#130](https://github.com/HabibYazar/SoftwareEngineering321/issues/130) | EP-08 | Must | 8 | Open | Security filters and automated tests |
+| US-03 Audit Logging | [#140](https://github.com/HabibYazar/SoftwareEngineering321/issues/140) | EP-08 | Must | 5 | Closed | Database audit schema and functions |
+| US-06 Register Patient | [#175](https://github.com/HabibYazar/SoftwareEngineering321/issues/175) | EP-01 | Must | 8 | Open | Patient API, frontend and validation tests |
+| US-07 Search Patient | [#186](https://github.com/HabibYazar/SoftwareEngineering321/issues/186) | EP-01 | Must | 3 | Open | Search API and frontend tests |
+| US-08 Update Patient | [#193](https://github.com/HabibYazar/SoftwareEngineering321/issues/193) | EP-01 | Should | 3 | Open | Update API, frontend and audit-related code |
+| US-09 Doctor Directory | [#201](https://github.com/HabibYazar/SoftwareEngineering321/issues/201) | EP-03 | Must | 3 | Open | Directory API and Docker smoke test |
 
-## 3. Functional Requirements
+**Acceptance status:** An open parent Issue must not be represented as formally accepted solely because its implementation was merged. Full acceptance remains subject to the Product Owner and QA review.
+
+Detailed prioritization, dependencies, acceptance checkpoints and traceability are recorded in [refined-backlog.md](sprint-2/refined-backlog.md).
+
+---## 3. Functional Requirements
 
 ### 3.1 Epic EP-03: Doctor & Staff Management
 
@@ -46,19 +85,11 @@ TBD
 
 **Verification Method:** Test department selection, filtered clinician results, empty responses, request failures, keyboard interaction and unauthorized navigation using synthetic demonstration data.
 
-**Pending Integration:** The frontend currently derives department options from clinician records. A department without clinicians may not appear. Complete department coverage and the final API contract require backend/Product Owner confirmation.
+**Integration status:** The merged API returns departments from PostgreSQL independently of doctor records. The local Docker smoke test returned 10 departments and 7 cardiology doctors. Additional browser accessibility acceptance remains a separate QA activity.
 ---
 
-### 3.2 Additional User Stories *(To Be Filled by Assigned Members)*
+### 3.2 Authentication, Audit and Patient Management
 
-#### US-XX: [Story Title] (`#XXX` — Owner: `@handle`)
-* **User Story:** As a [role], I want [capability] so that [benefit].
-* **Functional Requirements:**
-  * **FR-XX.1:** The system shall...
-* **Acceptance Criteria:**
-  * [ ] Criterion 1
-
----
 #### US-01: Staff Login (`#107` — Frontend `#122`)
 
 **Owner:** `@ardaservetusta-lang`
@@ -75,7 +106,7 @@ TBD
 
 **Verification Method:** Test successful and unsuccessful login, session handling, logout, role-based redirection, network errors and protected navigation using synthetic staff accounts.
 
-**API Dependency:** `POST /api/v1/auth/login` and `POST /api/v1/auth/logout`. Real backend authentication and token invalidation remain pending.
+**Integration status:** `POST /api/v1/auth/login` and `POST /api/v1/auth/logout` are implemented. Seven role-based login cases (six demo accounts and one administrator) passed the local Docker smoke test. Logout revocation requires its own acceptance evidence.
 
 ---
 
@@ -95,10 +126,36 @@ TBD
 
 **Verification Method:** Test all seven roles, menu visibility, direct URL access, refresh, browser navigation, session expiration and HTTP 401/403 responses.
 
-**Pending Dependency:** The complete role-permission matrix requires Product Owner approval. Currently, patient registration, patient search, patient profile editing and the doctor directory are available to Receptionist only. Server-side authorization remains a backend responsibility.
+**Integration status:** The backend enforces database-backed permissions using Spring Security. Role-aware frontend routing is implemented. Full seven-role negative authorization testing and Product Owner acceptance remain separate checkpoints.
 
 ---
 
+#### US-03: Logging of All Actions ([#140](https://github.com/HabibYazar/SoftwareEngineering321/issues/140))
+
+**Owner:** `@huseyin-tutak` (data requirements); QA: `@Ekejje`.
+
+**User Story:** As a hospital administrator, I want system activity to be logged so that authorized personnel can investigate changes and maintain accountability.
+
+**Functional Requirements:**
+
+- **FR-03.1 Event Content:** An audit event shall record its actor, actor role, action, outcome, affected record type and identifier, session and timestamp. Updates shall record relevant before/after information; deletions shall record the reason.
+- **FR-03.2 Coverage:** Patient, staff, account, department, permission and session changes shall generate audit records. Login, failed login, logout and session revocation shall also be auditable.
+- **FR-03.3 Attribution:** Business-data changes requiring an acting user shall reject missing actor context.
+- **FR-03.4 Immutability:** Ordinary application users shall not modify or delete audit events. Audit-read access shall be restricted to the approved permission.
+- **FR-03.5 Privacy:** Passwords, password hashes, access tokens and secrets shall not appear in audit details.
+- **FR-03.6 Archive Integrity:** Closed audit periods shall support verifiable archival and recovery with cryptographic integrity checks.
+
+**Acceptance checkpoints:**
+
+1. Required audit attributes are persisted.
+2. Security events and supported data mutations are traceable.
+3. Unauthorized audit modification is rejected.
+4. Sensitive credentials are excluded from audit payloads.
+5. Archive integrity can be verified.
+
+**Verification:** Database migration V2, audit-related database tests and [data requirements](SRS-data-requirements.md). The complete acceptance checklist still requires QA/PO confirmation; closure of the technical issue alone is not evidence of end-to-end coverage.
+
+---
 #### US-06: Register Patient (`#175` — Frontend `#182`)
 
 **Owner:** `@ardaservetusta-lang`
@@ -117,7 +174,7 @@ TBD
 
 **Verification Method:** Test all required fields, invalid data, 11-digit identity validation, condition levels, relative contact requirements, duplicate identity handling and submission feedback.
 
-**API Dependency:** `POST /api/v1/patients`. Real server persistence and national ID uniqueness enforcement remain pending.
+**Integration status:** `POST /api/v1/patients` is implemented with PostgreSQL-backed persistence and uniqueness constraints. The local Docker smoke test confirmed rejection of an invalid gender with HTTP 400; the complete valid-registration acceptance matrix requires separate verification.
 
 ---
 
@@ -137,7 +194,7 @@ TBD
 
 **Verification Method:** Test exact national ID lookup, partial-name queries, multiple results, empty results, network failures and navigation to a selected patient's profile.
 
-**API Dependency:** `GET /api/v1/patients?nationalId={nationalId}` and `GET /api/v1/patients?name={name}`. Real backend search integration remains pending.
+**Integration status:** Both `GET /api/v1/patients?nationalId=...` and `GET /api/v1/patients?name=...` are implemented. Automated tests exist; the local Docker smoke test did not independently exercise all search cases.
 
 ---
 
@@ -158,44 +215,24 @@ TBD
 
 **Verification Method:** Test patient selection, read-only national ID, editable fields, shared validation rules, Advanced relative contact requirements, synthetic patient updates, updated search results, unsaved changes warnings and access restrictions.
 
-**API Dependency:** `GET /api/v1/patients/{patientId}` is specified for patient retrieval. A patient update endpoint has not yet been approved in the OpenAPI contract. Real update operations remain pending. Development-only synthetic update testing uses `VITE_PATIENT_PROFILE_MOCK=true`.
+**Integration status:** `GET /api/v1/patients/{patientId}` and `PUT /api/v1/patients/{patientId}` are implemented. The frontend also supports opt-in development mock mode. Real API integration and complete update acceptance require browser/database verification.
 
-**Backend Dependency (US-03 / US-08):** The original US-08 acceptance criteria require every successful patient update to be recorded in a server-side audit log with before-and-after values. This requirement is outside the frontend implementation scope and remains pending backend verification.
+**Audit dependency:** US-08 requires before/after audit records for successful updates. Audit infrastructure is present in PostgreSQL, but the complete acceptance criterion must be confirmed with a targeted update-and-audit integration test.
 
 
 ## 4. Non-Functional Requirements (NFRs) & Quality Measures
 
-### NFR-01: Read Endpoint Response Latency (Performance Efficiency)
-* **Premise:** API Endpoints must be responsive; Clinic receptionists must be able to look up departments and filter doctors without perceptible UI lag during peak registration hours.
-* **Specification:** Under a sustained load of **50 concurrent virtual users** sending **10 requests per second (600 total requests over 60 seconds)** against a database seeded with **50 departments and 1,000 doctors**, the REST endpoints `GET /api/departments` and `GET /api/departments/{departmentId}/doctors` shall return responses with a **95th percentile (p95) latency of $\le 200\text{ ms}$**, a **99th percentile (p99) latency of $\le 500\text{ ms}$**, and a **0% HTTP 5xx error rate**.
-* **Traceability:** Supports `US-09` (`#201`), `#204`.
-* **Verification Method:** Automated load test executed via `k6` or `Apache JMeter` against the containerized stack in CI/staging, asserting `http_req_duration{p(95)} < 200` and `http_req_failed == 0`.
+The authoritative Sprint 2 quality specification is maintained in [quality-measures.md](sprint-2/quality-measures.md). Each requirement identifies a measurable target, test environment, verification method, evidence and current verification status.
 
-### NFR-02: Cold-Start Container Orchestration Time (Portability & Operability)
-* **Premise:** Any developer or automated CI runner must be able to spin up the entire multi-container application stack reliably with a single command.
-* **Specification:** On a clean host environment (Linux/macOS/Windows with Docker Engine $\ge 24.0$ and pre-cached base images), executing `docker compose up --build -d` shall build all application images, apply all Flyway database migrations, and transition the `db`, `backend`, and `frontend` services to a `healthy` / `running` state within **$\le 60\text{ seconds}$**, serving HTTP `200 OK` on `http://localhost:80`.
-* **Traceability:** Infrastructure baseline for all Sprint 2 deliverables (`#224`).
-* **Verification Method:** Executed automatically in GitHub Actions (`.github/workflows/docker-ci.yml`) on every pull request targeting `develop`, timed via shell execution bounds and verified with `docker compose ps` and `curl -f http://localhost:80`.
+| ID | Quality attribute | Measurable objective | Current verification |
+|---|---|---|---|
+| NFR-01 | Performance efficiency | Department/doctor reads: p95 <= 200 ms, p99 <= 500 ms under specified load | Load test pending |
+| NFR-02 | Operability | Pre-cached local Docker stack operational within 60 seconds | Controlled timing test pending |
+| NFR-03 | Reliability and integrity | Flyway-controlled schema, no unintended data loss on restart | Migrations verified; persistence restart test pending |
+| NFR-04 | Security and privacy | Isolated database, non-root runtime, synthetic data only | Partial; frontend runtime privilege check required |
+| NFR-05 | Maintainability | Required CI gates pass; target >= 50% unit line/branch coverage | CI passed; coverage threshold not enforced |
+| NFR-06 | Audit integrity and efficiency | Immutable, verifiable, compact audit storage | Data workstream measurements documented; independent verification pending |
 
-### NFR-03: Schema Determinism & Volume Persistence (Reliability & Data Integrity)
-* **Premise:** Database schema changes must remain strictly synchronized with application code, and stored records must never be lost or duplicated when containers restart.
-* **Specification:** 
-  1. Hibernate ORM shall execute with `spring.jpa.hibernate.ddl-auto=validate`, throwing a fatal startup exception (`exit code != 0`) if any JPA entity diverges from the Flyway-managed PostgreSQL schema (`0` permitted schema drift).
-  2. Executing `docker compose down` followed by `docker compose up -d` (without volume deletion) shall retain **100% of persisted records** across container lifecycles without re-executing already applied Flyway migrations (`0` duplicate seed rows).
-* **Traceability:** Supports `#202`, `#204`.
-* **Verification Method:** Integration test in CI verifying `flyway_schema_history` row counts and querying `SELECT COUNT(*) FROM departments` and `SELECT COUNT(*) FROM doctors` before and after a full container recreation cycle.
+**Evidence distinction:** Targets are specifications, not automatically achieved results. The Docker smoke test verifies start-up, schema, authentication, clinician directory and a negative gender-validation case. It is not a replacement for load tests, accessibility tests, volume-restart tests or the complete PostgreSQL integration suite.
 
-### NFR-04: Network Isolation, Least-Privilege Execution & Synthetic Data (Security & Privacy)
-* **Premise:** The database must remain isolated from external network access, containers must run without root privileges, and no real personal data may enter the repository.
-* **Specification:** 
-  1. The PostgreSQL container (`db`) shall bind **0 ports** to the host network interface (`0.0.0.0` / `127.0.0.1`), accepting TCP connections exclusively on port `5432` from containers attached to the internal `app-network` bridge.
-  2. Both the `backend` (JVM) and `frontend` (Nginx) runtime containers shall execute under non-root OS user accounts (`UID != 0`).
-  3. All Flyway seed files (`V*__*.sql`) and test fixtures shall contain **0 real patient, doctor, or staff Personally Identifiable Information (PII)** records.
-* **Traceability:** Enforces `US-09` Definition of Done (`#201`), `#202`.
-* **Verification Method:** Static inspection of `docker-compose.yml` (absence of `ports:` under `db`), runtime check via `docker compose exec backend id -u` (asserting output $\neq 0$), and manual PR review prior to merge.
-
-### NFR-05: Automated Test Coverage & Regression Gate (Maintainability)
-* **Premise:** Core backend endpoints and business rules must be guarded by automated tests to prevent regressions as teammates integrate new features.
-* **Specification:** Backend business logic, service filters, and REST controller endpoints shall maintain a minimum line and branch test coverage of **$\ge 50\%$**, with **100% of automated unit and integration tests passing** before any Pull Request can be merged into `develop`.
-* **Traceability:** Enforces `US-09` Definition of Done (`#201`), `#204`, `#206`.
-* **Verification Method:** Enforced via Maven (`mvn test jacoco:check`) inside GitHub Actions CI workflows and verified by QA acceptance tests in `#206`.
+See [Sprint 2 verification report](sprint-2/README.md).
