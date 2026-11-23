@@ -72,13 +72,13 @@ test('editing every allowed field reuses validation and updates the shared searc
   const patient = store.list()[0]
   const draft = {
     ...draftFromPatient(patient), firstName: ' Synthetic ', lastName: 'Updated',
-    dateOfBirth: '2004-02-29', gender: 'Other', phone: '0500 000 01 11', address: 'New synthetic address',
+    dateOfBirth: '2004-02-29', gender: 'Female', phone: '0500 000 01 11', address: 'New synthetic address',
     conditionLevel: 'ADVANCED', relativeFullName: relative.fullName,
     relativeRelationship: relative.relationship, relativePhone: '0500 000 00 00',
   }
   const { payload } = validateProfile(draft, true)
   assert.deepEqual(payload, {
-    firstName: 'Synthetic', lastName: 'Updated', dateOfBirth: '2004-02-29', gender: 'Other',
+    firstName: 'Synthetic', lastName: 'Updated', dateOfBirth: '2004-02-29', gender: 'Female',
     phone: '+905000000111', address: 'New synthetic address', conditionLevel: 'ADVANCED', relativeInformation: relative,
   })
   const updated = await profile.update(patient.id, payload, token)

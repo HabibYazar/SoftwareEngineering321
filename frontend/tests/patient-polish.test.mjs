@@ -40,7 +40,7 @@ test('registration and profile accept only the shared supported gender choices',
   const editing = draftFromPatient(loaded)
   assert.equal(editing.gender, 'Historical value')
   assert.match(validateProfile(editing, false).errors.gender, /supported/)
-  assert.equal(validateProfile({ ...editing, gender: 'Other' }, false).payload.gender, 'Other')
+  assert.match(validateProfile({ ...editing, gender: 'Other' }, false).errors.gender, /supported/)
 })
 
 const advanced = {

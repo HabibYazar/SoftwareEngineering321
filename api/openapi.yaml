@@ -589,7 +589,7 @@ components:
         lastName: { type: string, minLength: 1, maxLength: 100 }
         nationalId: { type: string, pattern: '^[0-9]{11}$', description: Synthetic test ID only }
         dateOfBirth: { type: string, format: date, description: 'Between 1900-01-01 and today (field error codes Min, PastOrPresent)' }
-        gender: { type: string, minLength: 1, maxLength: 40 }
+        gender: { type: string, enum: [Male, Female] }
         phone: { $ref: '#/components/schemas/PhoneNumber' }
         address: { type: string, minLength: 1, maxLength: 500 }
         conditionLevel: { type: string, enum: [MILD, MODERATE, ADVANCED] }
@@ -612,7 +612,7 @@ components:
         lastName: { type: string, minLength: 1, maxLength: 100 }
         nationalId: { type: string, pattern: '^[0-9]{11}$', description: Optional; must match the stored value }
         dateOfBirth: { type: string, format: date, description: 'Between 1900-01-01 and today (field error codes Min, PastOrPresent)' }
-        gender: { type: string, minLength: 1, maxLength: 40 }
+        gender: { type: string, enum: [Male, Female] }
         phone: { $ref: '#/components/schemas/PhoneNumber' }
         address: { type: string, minLength: 1, maxLength: 500 }
         conditionLevel: { type: string, enum: [MILD, MODERATE, ADVANCED] }

@@ -1,4 +1,4 @@
-// Ürün onayı bekleyen seçenekler, API'nin mevcut string alanına gönderilir.
+// Sprint 2: only Male and Female are supported.
 export const genderOptions = [
   { value: 'Male', label: 'Male' },
   { value: 'Female', label: 'Female' },
