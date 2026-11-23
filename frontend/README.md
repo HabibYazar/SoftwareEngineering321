@@ -37,6 +37,12 @@ Open the loopback URL Vite prints. Flags default to false and are opt-in for dev
 | lab.demo | Lab Technician |
 | cleaning.demo | Cleaning Staff |
 
+**These accounts belong to frontend development MOCK mode.**
+In particular, `admin.demo` is not automatically provisioned by the
+production Docker database. Follow the
+[Sprint 2 Docker demo guide](../docs/sprint-2/demo-and-qa.md)
+to bootstrap a real local Administrator.
+
 The sign-in fixtures share the synthetic password `DemoOnly!321`. Demo staff-management changes cannot change these sign-in accounts, passwords, app route permissions or any server state.
 
 ## HTTP mode and previews

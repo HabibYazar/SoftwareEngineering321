@@ -21,6 +21,7 @@ https://github.com/HabibYazar/SoftwareEngineering321
 | UML diagrams | [Architecture Diagrams](../architecture/README.md) |
 | Requirements traceability | [Traceability Matrix](traceability-matrix.md) |
 | Verification | [Sprint 2 Integration Report](README.md) |
+| Docker demo and QA | [Demo Setup and QA Checklist](demo-and-qa.md) |
 
 ## Team Members and Responsibilities
 
