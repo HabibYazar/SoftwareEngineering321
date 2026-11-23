@@ -13,7 +13,7 @@ public class StaffService {
         this.staffRepository = staffRepository;
     }
 
-    public List<StaffRepository.Clinician> getClinicians(String department) {
-        return staffRepository.findClinicians(department);
+    public List<StaffRepository.Doctor> getDoctors(String department) {
+        return staffRepository.findDoctors(department);
     }
 }

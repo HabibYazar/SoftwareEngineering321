@@ -101,9 +101,11 @@ $$;
 -- ============================================================================
 -- A. Conventions and reference data
 -- ============================================================================
-SELECT hms_test.ok('NFR-04', (SELECT count(*) FROM staff_members) + (SELECT count(*) FROM user_accounts)
-                           + (SELECT count(*) FROM patients) + (SELECT count(*) FROM departments) = 0,
-                   'Migrations contain no person, patient or department rows (no dummy data)');
+SELECT hms_test.ok('NFR-04', (SELECT count(*) FROM user_accounts) + (SELECT count(*) FROM patients) = 0
+    AND (SELECT count(*) FROM departments) = 8
+    AND (SELECT count(*) FROM staff_members) = 26,
+                   'Migrations contain no user accounts or patients, and seed 8 departments and 26 physicians');
+
 SELECT hms_test.ok('US-02', (SELECT string_agg(code, ',' ORDER BY id) FROM roles)
                    = 'Administrator,Receptionist,Physician,Nurse,PatientCareAssistant,LabTechnician,CleaningStaff',
                    'Seven roles match the OpenAPI LoginResponse.role enum');
@@ -171,14 +173,14 @@ SELECT hms_test.expect_error('US-05', $$INSERT INTO staff_members (role_id, firs
                              'HA403', 'Only administrators can create staff');
 
 SELECT hms_test.act('admin');
-INSERT INTO departments (name) VALUES ('Kardiyoloji') RETURNING set_config('hms_test.dept', id::text, true);
+SELECT set_config('hms_test.dept', id::text, true) FROM departments WHERE name = 'Kardiyoloji';
 SELECT hms_test.expect_error('US-05', $$INSERT INTO departments (name) VALUES ('kardiyoloji')$$,
                              'HV001', 'Department names are unique (case-insensitive)', 'name', '%DUPLICATE%');
 SELECT hms_test.expect_error('US-05', $$INSERT INTO departments (name) VALUES ('   ')$$,
                              'HV001', 'Blank department name is rejected with its column', 'name', '%REQUIRED%');
 
 INSERT INTO doctor_departments (staff_member_id, department_id) VALUES (hms_test.uuid('doc_staff'), hms_test.uuid('dept'));
-SELECT hms_test.ok('US-09', (SELECT count(*) FROM doctors WHERE department = 'Kardiyoloji') = 1,
+SELECT hms_test.ok('US-09', (SELECT count(*) FROM doctors WHERE id = hms_test.uuid('doc_staff') AND department = 'Kardiyoloji') = 1,
                    'Assigned physician appears in the doctors view with the department');
 SELECT hms_test.expect_error('US-05', $$INSERT INTO doctor_departments (staff_member_id, department_id)
                                         VALUES (hms_test.uuid('rec_staff'), hms_test.uuid('dept'))$$,
