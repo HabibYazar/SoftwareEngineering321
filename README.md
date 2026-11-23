@@ -14,7 +14,7 @@ A modular-monolith foundation for a single-hospital, on-premises, browser-based 
 - **Team / public:** `hms-community` under Apache License 2.0 **subject to verifying contributor rights and university policies before publication**.
 - **Personal / private:** any separately developed Enterprise modules belong in a **different private repository** and are **not included here**.
 - **Intended hosting:** application within the hospital's private LAN. Internet-facing patient portal and regulated integrations are deferred.
-- **Current state:** architecture + GitHub workflow + OpenAPI **draft** + running **health-only scaffold**. Domain API endpoints in the draft are NOT implemented yet.
+- **Current state:** Sprint 2 integration completed. PostgreSQL-backed staff authentication, role-based access, patient registration, search, update and physician directory APIs are implemented. Other HMS modules remain future work.
 
 ### Eight Community modules
 
@@ -56,7 +56,7 @@ flowchart LR
 - Architectural style: **modular monolith**, not microservices (see [ADR-001](docs/adr/0001-modular-monolith.md)).
 - Backend: Java 21, Spring Boot 3.5.x, Spring Security; planned layered structure: `api → application → domain → infrastructure` per module.
 - Frontend: React + TypeScript + Vite, Nginx for container serving/proxy.
-- Data: PostgreSQL; domain schema **not implemented** in this foundation stage.
+- Data: PostgreSQL 17 with Flyway migrations, role permissions, audit infrastructure, patient records and local-only synthetic demo seeds.
 - Interfaces: [OpenAPI 3.1 draft](api/openapi.yaml); `401/403/404/409` modeled where appropriate.
 - Cross-module rule: business logic belongs to its owning module, no direct access to another module's internal repositories; interfaces and IDs/event contracts at boundaries.
 - More: [Architecture index](docs/architecture/README.md), [C4 diagrams](docs/architecture/c4-context.mmd), [domain model](docs/architecture/domain-model.mmd).
@@ -69,13 +69,13 @@ Requires Docker Compose:
 docker compose up --build
 ```
 
-Visit **http://localhost:8080**. Frontend displays the backend health status. The database and backend have **no published host ports**. The published frontend port is bound to `127.0.0.1`, not a hospital network interface.
+Visit **http://localhost** for the frontend (default port 80, configurable with `HMS_HTTP_PORT`). The backend is available on `127.0.0.1:8080` by default (configurable with `HMS_BACKEND_PORT`). PostgreSQL is not exposed to host ports.
 
 ```bash
 docker compose down
 ```
 
-**No hospital-ready UI or patient workflows are implemented yet.** The test-only DB password in `compose.yaml` is a local fallback and must not be used outside a private development machine.
+**Patient workflows are implemented for this educational Sprint 2 prototype; this is not a hospital-ready deployment.** The test-only DB password in `compose.yaml` is a local fallback and must not be used outside a private development machine.
 
 The project requires authentication, TLS, backups, authorization tests, regulatory review, resilience and operational safeguards before any real clinical use.
 
@@ -127,6 +127,9 @@ A JaCoCo coverage report is configured. **50% unit-test coverage is a Sprint 3 t
 
 CI jobs install dependencies from their standard upstream registries.
 
+## Sprint 2 / integration evidence
+
+The [Sprint 2 integration and verification report](docs/sprint-2/README.md) documents merged pull requests, successful CI checks, Docker/PostgreSQL smoke tests and remaining verification.
 ## Sprint 1 / course evidence
 
 1. [Project proposal](docs/sprint-1/project-proposal.md)
